@@ -1,0 +1,148 @@
+// MetaIngest: how a catalogue daemon feeds an eNode-go server.
+//
+// The daemon serves and the server subscribes, which is the opposite of the
+// draft in §6.5 of the specification and the reason docs/ingest-contract.md
+// exists. Connections then run one way only — server to daemon — a daemon needs
+// no address for its consumer, and several servers can share one crawler.
+syntax = "proto3";
+
+package enode.meta.v1;
+
+import "enode/meta/v1/meta.proto";
+
+option go_package = "github.com/ModderMule/torrent-crawler/pkg/enodemeta/gen/enode/meta/v1;metav1";
+
+service MetaIngest {
+  // Subscribe streams catalogue changes, resumably.
+  rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
+
+  // FetchMetaFile returns the .torrent or .nzb behind a release.
+  //
+  // It is a pull rather than a push because metafiles are needed for a tiny
+  // fraction of rows: storing every one of them up front would be tens of
+  // gigabytes to serve a click-through rate of a fraction of a percent.
+  rpc FetchMetaFile(FetchMetaFileRequest) returns (MetaFile);
+
+  // Search covers the catalogue beyond the published set. It is deadline-bound
+  // and capped: a server may put it inside a user's search, so it must never be
+  // the slow part.
+  rpc Search(SearchRequest) returns (SearchResponse);
+
+  // GetInfo describes the daemon and where its feed currently stands.
+  rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
+}
+
+// ChangeOp is what happened to a release.
+enum ChangeOp {
+  CHANGE_OP_UNSPECIFIED = 0;
+
+  // CHANGE_OP_UPSERT replaces every row of that catalog_id.
+  CHANGE_OP_UPSERT = 1;
+
+  // CHANGE_OP_RETRACT removes them.
+  CHANGE_OP_RETRACT = 2;
+}
+
+// RetractReason says why a release left the feed, so an operator can tell
+// "the swarm died" from "the operator's filter changed".
+enum RetractReason {
+  RETRACT_REASON_UNSPECIFIED = 0;
+
+  // RETRACT_REASON_EXPIRED: the network stopped mentioning it.
+  RETRACT_REASON_EXPIRED = 1;
+
+  // RETRACT_REASON_BLOCKED: an operator filter now excludes it.
+  RETRACT_REASON_BLOCKED = 2;
+
+  // RETRACT_REASON_BELOW_THRESHOLD: it fell out of the published set, which is
+  // capped. It is still in the catalogue and still reachable through Search.
+  RETRACT_REASON_BELOW_THRESHOLD = 3;
+}
+
+message SubscribeRequest {
+  // after_seq resumes from a cursor the subscriber persisted. 0 asks for a
+  // snapshot of everything published.
+  uint64 after_seq = 1;
+
+  // max_batch is a hint; the daemon caps it and also batches by bytes, since
+  // entries carry magnets and file paths.
+  uint32 max_batch = 2;
+
+  // subscriber identifies the consumer in the daemon's logs and metrics.
+  string subscriber = 3;
+}
+
+message SubscribeResponse {
+  repeated ReleaseChange changes = 1;
+
+  // cursor is the highest seq included. Persist it only after the changes have
+  // been applied.
+  uint64 cursor = 2;
+
+  // caught_up marks the end of the backlog: everything after it is live. An
+  // otherwise empty message with caught_up set is the heartbeat.
+  bool caught_up = 3;
+
+  // reset means the daemon is sending a fresh snapshot and the subscriber must
+  // discard what it holds for this daemon. It is set when after_seq was 0, or
+  // when the cursor is older than the daemon's tombstone horizon — past that
+  // point the retractions needed to catch up have been purged, so incremental
+  // resume would silently leave dead rows behind.
+  bool reset = 4;
+
+  // snapshot_end marks the last message of a snapshot. Rows the snapshot did
+  // not re-send are gone.
+  bool snapshot_end = 5;
+}
+
+message ReleaseChange {
+  uint64 seq = 1;
+  string catalog_id = 2;
+  ChangeOp op = 3;
+
+  // entries is every row of the release, on an upsert.
+  repeated MetaEntry entries = 4;
+
+  RetractReason reason = 5;
+}
+
+message FetchMetaFileRequest {
+  string catalog_id = 1;
+
+  // identity, when set, is checked against the metafile before it is returned,
+  // so a caller can be sure it got the release it asked for even if the
+  // catalogue has since moved on.
+  bytes identity = 2;
+}
+
+message GetInfoRequest {}
+
+message GetInfoResponse {
+  // daemon is a stable name for this instance; a server keys catalog_ids by it.
+  string daemon = 1;
+
+  string version = 2;
+
+  // contract_version is the major version of enode.meta.v1 served.
+  uint32 contract_version = 3;
+
+  // kinds are the MetaKinds this daemon produces.
+  repeated MetaKind kinds = 4;
+
+  // last_seq is the newest change; purged_through_seq is the oldest still
+  // resumable. A subscriber whose cursor is below the latter gets a reset.
+  uint64 last_seq = 5;
+  uint64 purged_through_seq = 6;
+
+  // published is how many releases are in the feed; catalogued is how many the
+  // daemon holds in total, which Search can reach.
+  uint64 published = 7;
+  uint64 catalogued = 8;
+
+  // indexer is the name the daemon puts in each row's indexer field.
+  string indexer = 9;
+
+  // search_available is false when the daemon has no search index configured;
+  // Search then reports unimplemented.
+  bool search_available = 10;
+}

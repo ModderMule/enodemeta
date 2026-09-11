@@ -1,0 +1,142 @@
+// The enode.meta.v1 contract: what an eNode-go server, its catalogue daemons
+// and an eMuleQt client agree on.
+//
+// Specified in eNode-go's docs/meta-search-torrent-usenet-plan.local.md. This
+// file is the wire representation of that specification, not its authority:
+// where the two disagree, the document wins and this file is wrong.
+//
+// The contract version is the package name. Adding a transport is not a version
+// bump; removing a field is.
+syntax = "proto3";
+
+package enode.meta.v1;
+
+option go_package = "github.com/ModderMule/torrent-crawler/pkg/enodemeta/gen/enode/meta/v1;metav1";
+
+// MetaKind is the network a release belongs to.
+//
+// Values are prefixed because proto3 scopes enum values at the package level in
+// C++, and eMuleQt generates C++ from this file.
+enum MetaKind {
+  META_KIND_UNSPECIFIED = 0;
+  META_KIND_BT_V1 = 1;  // BitTorrent v1 or hybrid; identity is the 20-byte v1 infohash
+  META_KIND_BT_V2 = 2;  // BitTorrent v2 only; identity is the 32-byte v2 infohash
+  META_KIND_NZB = 3;    // Usenet; identity is the 32-byte canonical NZB digest
+}
+
+// MetaEntry is one advertised row: a release, or one file inside it.
+//
+// Fields 1 to 16 are the specification's §6.5 layout, unchanged. Fields 17 and
+// 18 were added because the hash's flag nibble cannot be derived without them
+// (see docs/ingest-contract.md).
+message MetaEntry {
+  // meta_hash is the 16 bytes of §3.
+  //
+  // The server mints it; a daemon must leave it empty. Keeping hash
+  // construction in one place means a daemon cannot mint a malformed or
+  // colliding hash, and the scheme version stays the server's to bump.
+  bytes meta_hash = 1;
+
+  MetaKind kind = 2;
+
+  // file_index is the selected file's ordinal, or 0xFFFFFFFF for the row that
+  // stands for the whole release. It is the libtorrent file_index_t, so padding
+  // files count.
+  uint32 file_index = 3;
+
+  // file_path is the path inside the torrent, or an NZB's subject. It is
+  // authoritative over file_index when the hash's 0x2 flag is set.
+  string file_path = 4;
+
+  // name is what a client displays.
+  string name = 5;
+
+  // size is the selected file's size; total_size is the whole release's.
+  uint64 size = 6;
+  uint64 total_size = 7;
+
+  // type is the eD2K file-type string: Audio, Video, Image, Doc, Pro, Arc, Iso.
+  string type = 8;
+
+  uint32 seeders = 9;
+  uint32 peers = 10;
+
+  // age_days is days since posting for Usenet, or since the torrent was first
+  // seen.
+  uint32 age_days = 11;
+
+  // indexer names the catalogue that produced the row.
+  string indexer = 12;
+
+  // catalog_id is the daemon's own id for the release, echoed back when the
+  // server asks for its metafile. It is unique per daemon, so a server keys
+  // rows by (daemon, catalog_id).
+  string catalog_id = 13;
+
+  // magnet is a BitTorrent magnet URI. A row carrying one needs no metafile
+  // fetch at all.
+  string magnet = 14;
+
+  // flags is the FT_META_FLAGS bitfield: password-protected, needs PAR2,
+  // private tracker, magnet-only, v2 hash available.
+  uint32 flags = 15;
+
+  // identity is the pre-fold digest of §3.4: the infohash, or the canonical NZB
+  // digest. The daemon computes it and the server folds it into meta_hash.
+  bytes identity = 16;
+
+  // file_count is how many selectable, non-padding files the release holds.
+  //
+  // It comes from the metafile rather than from how many rows were sent, so
+  // that publishing fewer files of the same release does not change the hash of
+  // the rows that are still published.
+  uint32 file_count = 17;
+
+  // path_authoritative asks the server to set the hash's 0x2 flag. A daemon
+  // sets it when the index cannot be trusted on its own — an NZB's file order
+  // is not fixed, and a path that had to be repaired to valid UTF-8 may be
+  // spelled differently by another client.
+  bool path_authoritative = 18;
+}
+
+// MetaFile is the bytes behind a row.
+message MetaFile {
+  MetaKind kind = 1;
+  bytes content = 2;
+  string content_type = 3;
+}
+
+// SearchRequest queries the part of a catalogue that is too large to publish.
+//
+// The shape is deliberately narrow: a full eD2K search expression does not
+// translate cleanly into a full-text engine, and a query language invented here
+// would have to be reimplemented by every consumer. Keywords plus the filters a
+// search panel already offers covers what a server needs to blend results.
+message SearchRequest {
+  // query is a set of keywords. All of them must match.
+  string query = 1;
+
+  // exclude drops a result whose text matches any of these.
+  repeated string exclude = 2;
+
+  repeated MetaKind kinds = 3;
+
+  uint64 min_size = 4;
+  uint64 max_size = 5;
+  uint32 min_seeders = 6;
+  uint32 max_age_days = 7;
+
+  // type filters on the eD2K file-type string.
+  string type = 8;
+
+  // limit is capped by the server.
+  uint32 limit = 9;
+}
+
+message SearchResponse {
+  repeated MetaEntry entries = 1;
+
+  // total is how many rows matched before the limit, when the engine can say
+  // cheaply. Zero means "not counted", not "none".
+  uint64 total = 2;
+}
