@@ -1,0 +1,282 @@
+{
+  "scheme": "enode.meta.v1",
+  "note": "Cross-repository test vectors for the eD2K meta hash (see eNode-go docs/meta-search-torrent-usenet-plan.local.md section 3). Every implementation — eNode-go, eMuleQt and the crawler daemons — must reproduce this file exactly. Regenerate with: go test ./metahash -update",
+  "fold": [
+    {
+      "label": "an empty digest",
+      "inputHex": "",
+      "width": 10,
+      "outputHex": "00000000000000000000"
+    },
+    {
+      "label": "one byte",
+      "inputHex": "AB",
+      "width": 10,
+      "outputHex": "AB000000000000000000"
+    },
+    {
+      "label": "nine bytes, one short of the width",
+      "inputHex": "010203040506070809",
+      "width": 10,
+      "outputHex": "01020304050607080900"
+    },
+    {
+      "label": "ten bytes, exactly the width",
+      "inputHex": "0102030405060708090A",
+      "width": 10,
+      "outputHex": "0102030405060708090A"
+    },
+    {
+      "label": "a 20-byte SHA-1: the two halves XORed",
+      "inputHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "width": 10,
+      "outputHex": "1E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "a 32-byte SHA-256: three passes, the last partial",
+      "inputHex": "5528B42FF1AB53225C4EA19E988DB97072D733EB0B574BE64C1FBDB93D093F4C",
+      "width": 10,
+      "outputHex": "C0AD674404C49C4C52AC"
+    },
+    {
+      "label": "64 bytes: a longer input still folds",
+      "inputHex": "5AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA55AA5",
+      "width": 10,
+      "outputHex": "5AA55AA5000000000000"
+    }
+  ],
+  "build": [
+    {
+      "label": "bt-v1, single file, no flags",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 0,
+      "fileIndex": 0,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011000001E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, multi-file, first file",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 1,
+      "fileIndex": 0,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011100001E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, multi-file, file 5",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 1,
+      "fileIndex": 5,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011105001E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, multi-file, the whole-set row",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 1,
+      "fileIndex": 4294967295,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B0111FFFF1E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, the last index below the marker",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 1,
+      "fileIndex": 65534,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B0111FEFF1E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, a wide index keeps its low 16 bits",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 3,
+      "fileIndex": 70000,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011370111E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, a second release, same index",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 1,
+      "fileIndex": 5,
+      "identityHex": "39029286F6DC6AF6D3642EE410EB259D3F33487E",
+      "hashHex": "ED2B0111050017E6826DD34155C59B1A"
+    },
+    {
+      "label": "bt-v2, single file",
+      "kind": 2,
+      "kindName": "bt-v2",
+      "version": 1,
+      "flags": 0,
+      "fileIndex": 0,
+      "identityHex": "5528B42FF1AB53225C4EA19E988DB97072D733EB0B574BE64C1FBDB93D093F4C",
+      "hashHex": "ED2B01200000C0AD674404C49C4C52AC"
+    },
+    {
+      "label": "bt-v2, multi-file, path authoritative",
+      "kind": 2,
+      "kindName": "bt-v2",
+      "version": 1,
+      "flags": 3,
+      "fileIndex": 3,
+      "identityHex": "5528B42FF1AB53225C4EA19E988DB97072D733EB0B574BE64C1FBDB93D093F4C",
+      "hashHex": "ED2B01230300C0AD674404C49C4C52AC"
+    },
+    {
+      "label": "nzb, single file",
+      "kind": 3,
+      "kindName": "nzb",
+      "version": 1,
+      "flags": 2,
+      "fileIndex": 0,
+      "identityHex": "96831505D4C78024B2E46205B12849684256603BC7BA4F0B3BF7D99A6EBD153B",
+      "hashHex": "ED2B013200002607EB26A6581BE8BC62"
+    },
+    {
+      "label": "nzb, multi-file, protected",
+      "kind": 3,
+      "kindName": "nzb",
+      "version": 1,
+      "flags": 7,
+      "fileIndex": 2,
+      "identityHex": "96831505D4C78024B2E46205B12849684256603BC7BA4F0B3BF7D99A6EBD153B",
+      "hashHex": "ED2B013702002607EB26A6581BE8BC62"
+    },
+    {
+      "label": "bt-v1, flags 0x0 (none)",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 0,
+      "fileIndex": 1,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011001001E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, flags 0x1 (multi-file)",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 1,
+      "fileIndex": 1,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011101001E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, flags 0x2 (path-authoritative)",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 2,
+      "fileIndex": 1,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011201001E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, flags 0x3 (multi-file|path-authoritative)",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 3,
+      "fileIndex": 1,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011301001E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, flags 0x4 (protected)",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 4,
+      "fileIndex": 1,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011401001E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, flags 0x5 (multi-file|protected)",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 5,
+      "fileIndex": 1,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011501001E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, flags 0x6 (path-authoritative|protected)",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 6,
+      "fileIndex": 1,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011601001E1B3620ADE2AF9D6E90"
+    },
+    {
+      "label": "bt-v1, flags 0x7 (multi-file|path-authoritative|protected)",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "version": 1,
+      "flags": 7,
+      "fileIndex": 1,
+      "identityHex": "0CEC613B424DC858488612F7571BEFAF67C52616",
+      "hashHex": "ED2B011701001E1B3620ADE2AF9D6E90"
+    }
+  ],
+  "reject": [
+    {
+      "label": "a wrong first magic byte",
+      "hashHex": "EE2B011101001E1B3620ADE2AF9D6E90",
+      "reason": "magic must be ED 2B"
+    },
+    {
+      "label": "a wrong second magic byte",
+      "hashHex": "ED2C011101001E1B3620ADE2AF9D6E90",
+      "reason": "magic must be ED 2B"
+    },
+    {
+      "label": "an unknown scheme version",
+      "hashHex": "ED2B021101001E1B3620ADE2AF9D6E90",
+      "reason": "a client must silently drop a row whose version it does not know"
+    },
+    {
+      "label": "kind 0",
+      "hashHex": "ED2B010101001E1B3620ADE2AF9D6E90",
+      "reason": "kind 0 is reserved"
+    },
+    {
+      "label": "an unknown kind",
+      "hashHex": "ED2B01F101001E1B3620ADE2AF9D6E90",
+      "reason": "kind must be 1, 2 or 3 in this version"
+    },
+    {
+      "label": "the reserved flag set",
+      "hashHex": "ED2B011901001E1B3620ADE2AF9D6E90",
+      "reason": "flag 0x8 is reserved and must be zero"
+    },
+    {
+      "label": "an ordinary MD4 file hash",
+      "hashHex": "41414141414141414141414141414141",
+      "reason": "not a meta hash at all"
+    },
+    {
+      "label": "a truncated hash",
+      "hashHex": "ED2B011101001E1B3620ADE2AF9D6E",
+      "reason": "a meta hash is exactly 16 bytes"
+    }
+  ]
+}
