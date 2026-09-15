@@ -24,8 +24,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/bencode"
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/metahash"
+	"github.com/ModderMule/enodemeta/bencode"
+	"github.com/ModderMule/enodemeta/metahash"
 )
 
 // Limits that keep a hostile or broken metafile from turning into an

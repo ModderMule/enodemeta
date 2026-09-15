@@ -11,7 +11,7 @@ syntax = "proto3";
 
 package enode.meta.v1;
 
-option go_package = "github.com/ModderMule/torrent-crawler/pkg/enodemeta/gen/enode/meta/v1;metav1";
+option go_package = "github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1";
 
 // MetaKind is the network a release belongs to.
 //

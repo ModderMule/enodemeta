@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/bencode"
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/metahash"
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/torrentmeta"
+	"github.com/ModderMule/enodemeta/bencode"
+	"github.com/ModderMule/enodemeta/metahash"
+	"github.com/ModderMule/enodemeta/torrentmeta"
 )
 
 func infoDict(t *testing.T, name string) []byte {

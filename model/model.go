@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/metahash"
+	"github.com/ModderMule/enodemeta/metahash"
 )
 
 // Errors returned by Validate.

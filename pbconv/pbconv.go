@@ -8,10 +8,10 @@
 package pbconv
 
 import (
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/metahash"
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/model"
+	"github.com/ModderMule/enodemeta/metahash"
+	"github.com/ModderMule/enodemeta/model"
 
-	metav1 "github.com/ModderMule/torrent-crawler/pkg/enodemeta/gen/enode/meta/v1"
+	metav1 "github.com/ModderMule/enodemeta/gen/enode/meta/v1"
 )
 
 // KindToProto converts a meta kind.

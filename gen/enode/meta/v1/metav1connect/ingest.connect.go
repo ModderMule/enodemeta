@@ -14,7 +14,7 @@ package metav1connect
 import (
 	connect "connectrpc.com/connect/v2"
 	context "context"
-	v1 "github.com/ModderMule/torrent-crawler/pkg/enodemeta/gen/enode/meta/v1"
+	v1 "github.com/ModderMule/enodemeta/gen/enode/meta/v1"
 	sync "sync"
 )
 

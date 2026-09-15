@@ -10,7 +10,7 @@ package enode.meta.v1;
 
 import "enode/meta/v1/meta.proto";
 
-option go_package = "github.com/ModderMule/torrent-crawler/pkg/enodemeta/gen/enode/meta/v1;metav1";
+option go_package = "github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1";
 
 service MetaIngest {
   // Subscribe streams catalogue changes, resumably.

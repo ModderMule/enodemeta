@@ -591,7 +591,7 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\x15META_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V1\x10\x01\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V2\x10\x02\x12\x11\n" +
-	"\rMETA_KIND_NZB\x10\x03BNZLgithub.com/ModderMule/torrent-crawler/pkg/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
+	"\rMETA_KIND_NZB\x10\x03B:Z8github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
 
 var (
 	file_enode_meta_v1_meta_proto_rawDescOnce sync.Once

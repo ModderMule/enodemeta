@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/bencode"
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/metahash"
+	"github.com/ModderMule/enodemeta/bencode"
+	"github.com/ModderMule/enodemeta/metahash"
 )
 
 // The fixtures are built here rather than checked in as binaries: a reader can

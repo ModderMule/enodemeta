@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/metahash"
+	"github.com/ModderMule/enodemeta/metahash"
 )
 
 func validEntry() Entry {

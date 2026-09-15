@@ -641,7 +641,7 @@ const file_enode_meta_v1_ingest_proto_rawDesc = "" +
 	"\tSubscribe\x12\x1f.enode.meta.v1.SubscribeRequest\x1a .enode.meta.v1.SubscribeResponse0\x01\x12M\n" +
 	"\rFetchMetaFile\x12#.enode.meta.v1.FetchMetaFileRequest\x1a\x17.enode.meta.v1.MetaFile\x12E\n" +
 	"\x06Search\x12\x1c.enode.meta.v1.SearchRequest\x1a\x1d.enode.meta.v1.SearchResponse\x12H\n" +
-	"\aGetInfo\x12\x1d.enode.meta.v1.GetInfoRequest\x1a\x1e.enode.meta.v1.GetInfoResponseBNZLgithub.com/ModderMule/torrent-crawler/pkg/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
+	"\aGetInfo\x12\x1d.enode.meta.v1.GetInfoRequest\x1a\x1e.enode.meta.v1.GetInfoResponseB:Z8github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
 
 var (
 	file_enode_meta_v1_ingest_proto_rawDescOnce sync.Once

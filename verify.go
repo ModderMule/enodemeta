@@ -12,8 +12,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/metahash"
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/torrentmeta"
+	"github.com/ModderMule/enodemeta/metahash"
+	"github.com/ModderMule/enodemeta/torrentmeta"
 )
 
 // Errors returned when a metafile cannot be checked against a hash.

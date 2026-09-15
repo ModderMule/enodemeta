@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/metahash"
-	"github.com/ModderMule/torrent-crawler/pkg/enodemeta/model"
+	"github.com/ModderMule/enodemeta/metahash"
+	"github.com/ModderMule/enodemeta/model"
 )
 
 // TestEntryRoundTripLosesNothing is the test the specification asks for in §11:

@@ -1,4 +1,4 @@
-module github.com/ModderMule/torrent-crawler/pkg/enodemeta
+module github.com/ModderMule/enodemeta
 
 go 1.25.0
 
