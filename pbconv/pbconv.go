@@ -187,6 +187,7 @@ func SearchQueryToProto(q model.SearchQuery) *metav1.SearchRequest {
 		MaxAgeDays: q.MaxAgeDays,
 		Type:       q.Type,
 		Limit:      q.Limit,
+		Offset:     q.Offset,
 	}
 }
 
@@ -216,14 +217,16 @@ func SearchQueryFromProto(r *metav1.SearchRequest) model.SearchQuery {
 		MaxAgeDays: r.GetMaxAgeDays(),
 		Type:       r.GetType(),
 		Limit:      r.GetLimit(),
+		Offset:     r.GetOffset(),
 	}
 }
 
 // SearchResultToProto converts a result.
 func SearchResultToProto(res model.SearchResult) *metav1.SearchResponse {
 	return &metav1.SearchResponse{
-		Entries: EntriesToProto(res.Entries),
-		Total:   res.Total,
+		Entries:    EntriesToProto(res.Entries),
+		Total:      res.Total,
+		NextOffset: res.NextOffset,
 	}
 }
 
@@ -234,8 +237,9 @@ func SearchResultFromProto(res *metav1.SearchResponse) model.SearchResult {
 	}
 
 	return model.SearchResult{
-		Entries: EntriesFromProto(res.GetEntries()),
-		Total:   res.GetTotal(),
+		Entries:    EntriesFromProto(res.GetEntries()),
+		Total:      res.GetTotal(),
+		NextOffset: res.GetNextOffset(),
 	}
 }
 

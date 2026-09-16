@@ -126,17 +126,31 @@ message SearchRequest {
   uint32 min_seeders = 6;
   uint32 max_age_days = 7;
 
-  // type filters on the eD2K file-type string.
+  // type filters on the eD2K file-type string, ignoring case. A file row is
+  // kept when its own type matches; a release's whole-set row is kept when it
+  // matches or when any of that release's file rows does. An unknown type
+  // matches nothing.
   string type = 8;
 
-  // limit is capped by the server.
+  // limit is how many releases to return, not rows: a multi-file release is
+  // several rows. It is capped by the server.
   uint32 limit = 9;
+
+  // offset skips this many of the best-matching releases, which is how a
+  // later page is asked for. The server searches a bounded window, so an offset
+  // past it returns nothing; follow SearchResponse.next_offset rather than
+  // computing offsets, since the server may have capped limit.
+  uint32 offset = 10;
 }
 
 message SearchResponse {
   repeated MetaEntry entries = 1;
 
-  // total is how many rows matched before the limit, when the engine can say
-  // cheaply. Zero means "not counted", not "none".
+  // total is how many releases matched before the limit, when the engine can
+  // say cheaply. Zero means "not counted", not "none".
   uint64 total = 2;
+
+  // next_offset is the offset of the next page. Zero means there is no further
+  // page: either nothing more matched or the server's window is exhausted.
+  uint32 next_offset = 3;
 }

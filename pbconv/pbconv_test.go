@@ -130,6 +130,7 @@ func TestSearchRoundTrip(t *testing.T) {
 		MaxAgeDays: 365,
 		Type:       "Iso",
 		Limit:      50,
+		Offset:     150,
 	}
 	t.Logf("input:  %+v", query)
 
@@ -141,10 +142,15 @@ func TestSearchRoundTrip(t *testing.T) {
 	}
 
 	result := model.SearchResult{
-		Entries: []model.Entry{{Kind: metahash.KindBTV2, Identity: make([]byte, 32), Name: "x"}},
-		Total:   1234,
+		Entries:    []model.Entry{{Kind: metahash.KindBTV2, Identity: make([]byte, 32), Name: "x"}},
+		Total:      1234,
+		NextOffset: 200,
 	}
-	if got := SearchResultFromProto(SearchResultToProto(result)); !reflect.DeepEqual(result, got) {
+	got := SearchResultFromProto(SearchResultToProto(result))
+	t.Logf("input:  %+v", result)
+	t.Logf("output: %+v", got)
+
+	if !reflect.DeepEqual(result, got) {
 		t.Errorf("a result lost something:\n in: %+v\nout: %+v", result, got)
 	}
 }

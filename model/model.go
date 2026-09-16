@@ -215,16 +215,22 @@ type SearchQuery struct {
 	MaxAgeDays uint32
 	Type       string
 
-	Limit uint32
+	// Limit and Offset count releases, not rows: a multi-file release is
+	// several rows.
+	Limit  uint32
+	Offset uint32
 }
 
 // SearchResult is what a search returned.
 type SearchResult struct {
 	Entries []Entry
 
-	// Total is how many rows matched before the limit, when the engine can say
-	// cheaply. Zero means "not counted", not "none".
+	// Total is how many releases matched before the limit, when the engine can
+	// say cheaply. Zero means "not counted", not "none".
 	Total uint64
+
+	// NextOffset is where the next page starts. Zero means there is none.
+	NextOffset uint32
 }
 
 // DaemonInfo describes a catalogue daemon and where its feed stands.

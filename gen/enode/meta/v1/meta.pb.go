@@ -384,10 +384,19 @@ type SearchRequest struct {
 	MaxSize    uint64     `protobuf:"varint,5,opt,name=max_size,json=maxSize,proto3" json:"max_size,omitempty"`
 	MinSeeders uint32     `protobuf:"varint,6,opt,name=min_seeders,json=minSeeders,proto3" json:"min_seeders,omitempty"`
 	MaxAgeDays uint32     `protobuf:"varint,7,opt,name=max_age_days,json=maxAgeDays,proto3" json:"max_age_days,omitempty"`
-	// type filters on the eD2K file-type string.
+	// type filters on the eD2K file-type string, ignoring case. A file row is
+	// kept when its own type matches; a release's whole-set row is kept when it
+	// matches or when any of that release's file rows does. An unknown type
+	// matches nothing.
 	Type string `protobuf:"bytes,8,opt,name=type,proto3" json:"type,omitempty"`
-	// limit is capped by the server.
-	Limit         uint32 `protobuf:"varint,9,opt,name=limit,proto3" json:"limit,omitempty"`
+	// limit is how many releases to return, not rows: a multi-file release is
+	// several rows. It is capped by the server.
+	Limit uint32 `protobuf:"varint,9,opt,name=limit,proto3" json:"limit,omitempty"`
+	// offset skips this many of the best-matching releases, which is how a
+	// later page is asked for. The server searches a bounded window, so an offset
+	// past it returns nothing; follow SearchResponse.next_offset rather than
+	// computing offsets, since the server may have capped limit.
+	Offset        uint32 `protobuf:"varint,10,opt,name=offset,proto3" json:"offset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -485,12 +494,22 @@ func (x *SearchRequest) GetLimit() uint32 {
 	return 0
 }
 
+func (x *SearchRequest) GetOffset() uint32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
 type SearchResponse struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Entries []*MetaEntry           `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
-	// total is how many rows matched before the limit, when the engine can say
-	// cheaply. Zero means "not counted", not "none".
-	Total         uint64 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	// total is how many releases matched before the limit, when the engine can
+	// say cheaply. Zero means "not counted", not "none".
+	Total uint64 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	// next_offset is the offset of the next page. Zero means there is no further
+	// page: either nothing more matched or the server's window is exhausted.
+	NextOffset    uint32 `protobuf:"varint,3,opt,name=next_offset,json=nextOffset,proto3" json:"next_offset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -539,6 +558,13 @@ func (x *SearchResponse) GetTotal() uint64 {
 	return 0
 }
 
+func (x *SearchResponse) GetNextOffset() uint32 {
+	if x != nil {
+		return x.NextOffset
+	}
+	return 0
+}
+
 var File_enode_meta_v1_meta_proto protoreflect.FileDescriptor
 
 const file_enode_meta_v1_meta_proto_rawDesc = "" +
@@ -571,7 +597,7 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\bMetaFile\x12+\n" +
 	"\x04kind\x18\x01 \x01(\x0e2\x17.enode.meta.v1.MetaKindR\x04kind\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\fR\acontent\x12!\n" +
-	"\fcontent_type\x18\x03 \x01(\tR\vcontentType\"\x91\x02\n" +
+	"\fcontent_type\x18\x03 \x01(\tR\vcontentType\"\xa9\x02\n" +
 	"\rSearchRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x18\n" +
 	"\aexclude\x18\x02 \x03(\tR\aexclude\x12-\n" +
@@ -583,10 +609,14 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\fmax_age_days\x18\a \x01(\rR\n" +
 	"maxAgeDays\x12\x12\n" +
 	"\x04type\x18\b \x01(\tR\x04type\x12\x14\n" +
-	"\x05limit\x18\t \x01(\rR\x05limit\"Z\n" +
+	"\x05limit\x18\t \x01(\rR\x05limit\x12\x16\n" +
+	"\x06offset\x18\n" +
+	" \x01(\rR\x06offset\"{\n" +
 	"\x0eSearchResponse\x122\n" +
 	"\aentries\x18\x01 \x03(\v2\x18.enode.meta.v1.MetaEntryR\aentries\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x04R\x05total*b\n" +
+	"\x05total\x18\x02 \x01(\x04R\x05total\x12\x1f\n" +
+	"\vnext_offset\x18\x03 \x01(\rR\n" +
+	"nextOffset*b\n" +
 	"\bMetaKind\x12\x19\n" +
 	"\x15META_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V1\x10\x01\x12\x13\n" +
