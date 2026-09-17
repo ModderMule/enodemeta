@@ -395,6 +395,67 @@ func TestPathTraversal(t *testing.T) {
 	}
 }
 
+// TestUnnamedPathComponent: a file path component with nothing usable left in it
+// becomes "_", as libtorrent writes it, rather than costing the whole torrent.
+// Components dropped in the middle of a longer path stay dropped.
+func TestUnnamedPathComponent(t *testing.T) {
+	v1 := func(path ...any) []byte {
+		return bencode.MustEncode(map[string]any{
+			"name":         "release",
+			"piece length": 262144,
+			"files": []any{
+				map[string]any{"length": 1, "path": path},
+			},
+		})
+	}
+
+	cases := []struct {
+		label string
+		raw   []byte
+		want  string
+	}{
+		{"an empty v1 component", v1(""), "_"},
+		{"a v1 traversal on its own", v1(".."), "_"},
+		{"a v1 component of stripped characters", v1("\x00\x01"), "_"},
+		{"an empty v1 component after a directory", v1("dir", ""), "dir"},
+		{
+			"a v2 directory that sanitises away",
+			bencode.MustEncode(map[string]any{
+				"name":         "release",
+				"piece length": 262144,
+				"meta version": 2,
+				"file tree": map[string]any{
+					"..": map[string]any{
+						"file.mkv": map[string]any{
+							"": map[string]any{"length": 1, "pieces root": strings.Repeat("A", 32)},
+						},
+					},
+				},
+			}),
+			"_/file.mkv",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.label, func(t *testing.T) {
+			t.Logf("input:  %q", truncate(c.raw))
+
+			info, err := ParseInfo(c.raw)
+			if err != nil {
+				t.Fatalf("parse: %v", err)
+			}
+			if len(info.Files) != 1 {
+				t.Fatalf("files: got %d, want 1", len(info.Files))
+			}
+			t.Logf("output: %q", info.Files[0].Path)
+
+			if info.Files[0].Path != c.want {
+				t.Errorf("path: got %q, want %q", info.Files[0].Path, c.want)
+			}
+		})
+	}
+}
+
 func TestParseRejects(t *testing.T) {
 	cases := []struct {
 		label string

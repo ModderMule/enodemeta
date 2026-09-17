@@ -37,6 +37,18 @@ const (
 	MaxNameBytes    = 4096
 )
 
+// unnamedComponent stands in for a file path component with nothing usable left
+// in it: empty, a traversal, or made only of characters that are stripped.
+//
+// It is libtorrent's choice, and the reason to copy it is that libtorrent is
+// what the swarm runs. sanitize_append_path_element (src/torrent_info.cpp) gives
+// every element of a file's path exactly one element on disk, writing "_" for one
+// that sanitises to nothing, so a client downloads such a torrent without
+// complaint. Refusing it here gave up for good on torrents that every client
+// could fetch: a four-minute server run permanently failed two of them with
+// "has an empty path".
+const unnamedComponent = "_"
+
 // Version is which BitTorrent metadata version a torrent uses.
 type Version uint8
 
@@ -526,8 +538,11 @@ func (i *Info) readPath(entry bencode.Value, index uint32) (File, error) {
 		parts = append(parts, part)
 	}
 
+	// Components that sanitise away in the middle of a path are still dropped,
+	// so "../../etc/passwd" stays "etc/passwd" and no stored path changes. Only a
+	// path left with nothing takes libtorrent's placeholder.
 	if len(parts) == 0 {
-		return File{}, fmt.Errorf("%w: entry %d has an empty path", ErrBadPath, index)
+		parts = append(parts, unnamedComponent)
 	}
 
 	file.Path = strings.Join(parts, "/")
@@ -578,9 +593,11 @@ func (i *Info) readFileTree(v bencode.Value) error {
 				return fmt.Errorf("%w: %q is neither a directory nor a file", ErrBadPath, entry.Key)
 			}
 
+			// Replaced rather than dropped: in a file tree, every level is a
+			// directory or a file of its own, and libtorrent keeps it as one.
 			part := sanitiseComponent(toValidUTF8(entry.Key))
 			if part == "" {
-				return fmt.Errorf("%w: an unusable path component", ErrBadPath)
+				part = unnamedComponent
 			}
 			if len(prefix) >= MaxPathSegments {
 				return fmt.Errorf("%w: the file tree nests too deep", ErrBadPath)
