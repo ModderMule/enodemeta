@@ -122,6 +122,18 @@ func (e Entry) Validate() error {
 		return fmt.Errorf("%w: the selected file is %d bytes of a %d-byte release", ErrInvalidEntry, e.Size, e.TotalSize)
 	}
 
+	// A Usenet release has no magnet, and nothing but these two checks says so.
+	// They only bite once a second kind exists: a daemon that copied the torrent
+	// crawler's row builder would carry a magnet field over, and a client that
+	// saw FlagMagnetOnly on an NZB row would offer a download that cannot start,
+	// because the only way to fetch the articles is the metafile itself.
+	if e.Kind == metahash.KindNZB && e.Magnet != "" {
+		return fmt.Errorf("%w: an nzb row cannot carry a magnet", ErrInvalidEntry)
+	}
+	if e.Kind == metahash.KindNZB && e.Flags&FlagMagnetOnly != 0 {
+		return fmt.Errorf("%w: an nzb row cannot be magnet-only", ErrInvalidEntry)
+	}
+
 	// Minting is where the index rules are enforced, so running it here catches
 	// an unmintable row at the source.
 	if _, err := metahash.Mint(e.MintInput()); err != nil {

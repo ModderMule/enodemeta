@@ -172,12 +172,72 @@ func TestVerifyMetaFileRejectsGarbage(t *testing.T) {
 	}
 }
 
-// TestIdentityOfNZB pins the one gap, so it fails loudly rather than silently
-// accepting a row nothing can check.
-func TestIdentityOfNZB(t *testing.T) {
-	_, err := IdentityOf(metahash.KindNZB, []byte("<nzb/>"))
+// TestVerifyNZBMetaFile walks the whole NZB half of the contract: a daemon mints
+// a row from a document, a consumer fetches the bytes and folds them, and the
+// two agree.
+func TestVerifyNZBMetaFile(t *testing.T) {
+	nzb := []byte(`<?xml version="1.0" encoding="UTF-8"?>` + "\n" +
+		`<nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">` + "\n" +
+		`  <head><meta type="name">Some.Release</meta></head>` + "\n" +
+		`  <file poster="p@example.invalid" date="1700000000" subject="Some.Release.part01.rar (1/2)">` + "\n" +
+		`    <groups><group>alt.binaries.test</group></groups>` + "\n" +
+		`    <segments>` + "\n" +
+		`      <segment bytes="700000" number="1">a1@example.invalid</segment>` + "\n" +
+		`      <segment bytes="700000" number="2">a2@example.invalid</segment>` + "\n" +
+		`    </segments>` + "\n" +
+		`  </file>` + "\n" +
+		`</nzb>` + "\n")
+	t.Logf("input:  a %d-byte NZB listing 2 segments", len(nzb))
+
+	identity, err := IdentityOf(metahash.KindNZB, nzb)
+	if err != nil {
+		t.Fatalf("deriving the NZB identity: %v", err)
+	}
+	t.Logf("output: identity %x", identity)
+
+	if len(identity) != metahash.KindNZB.IdentityLen() {
+		t.Fatalf("an nzb identity is %d bytes, got %d", metahash.KindNZB.IdentityLen(), len(identity))
+	}
+
+	hash, err := metahash.Mint(metahash.MintInput{
+		Kind:      metahash.KindNZB,
+		Identity:  identity,
+		FileIndex: 0,
+		FileCount: 1,
+	})
+	if err != nil {
+		t.Fatalf("minting the row: %v", err)
+	}
+	t.Logf("output: meta hash %s", hash)
+
+	if err := VerifyMetaFile(hash, nzb); err != nil {
+		t.Errorf("the bytes the identity came from must verify: %v", err)
+	}
+
+	// Redacting the head must not move the digest: that is what lets a daemon
+	// serve a password-stripped copy a client can still check.
+	redacted := []byte(strings.Replace(string(nzb),
+		`  <head><meta type="name">Some.Release</meta></head>`+"\n", "", 1))
+	if err := VerifyMetaFile(hash, redacted); err != nil {
+		t.Errorf("a copy with <head> stripped must still verify: %v", err)
+	}
+	t.Logf("output: the %d-byte redacted copy verifies against the same hash", len(redacted))
+
+	// A different article list is a different release.
+	other := []byte(strings.Replace(string(nzb), "a2@example.invalid", "a3@example.invalid", 1))
+	if err := VerifyMetaFile(hash, other); err == nil {
+		t.Error("a document with a different article must not verify")
+	} else {
+		t.Logf("output: a changed article is rejected: %v", err)
+	}
+}
+
+// TestIdentityOfUnknownKind pins that a kind from a later version of the scheme
+// is refused rather than guessed at.
+func TestIdentityOfUnknownKind(t *testing.T) {
+	_, err := IdentityOf(metahash.Kind(7), []byte("anything"))
 	if err == nil {
-		t.Fatal("NZB identity is not implemented yet and must say so")
+		t.Fatal("an unknown kind must be refused")
 	}
 	t.Logf("output: %v", err)
 

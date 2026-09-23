@@ -25,6 +25,27 @@ func validEntry() Entry {
 	}
 }
 
+// validNZBEntry is the Usenet shape: a 32-byte canonical digest, an nzb:
+// catalogue id, and no magnet.
+func validNZBEntry() Entry {
+	identity := make([]byte, 32)
+	for i := range identity {
+		identity[i] = byte(0x20 + i)
+	}
+
+	return Entry{
+		Kind:              metahash.KindNZB,
+		Identity:          identity,
+		Name:              "Some.Release.2026.1080p",
+		CatalogID:         "nzb:202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F",
+		FileIndex:         0,
+		FileCount:         3,
+		Size:              700 << 20,
+		TotalSize:         2100 << 20,
+		PathAuthoritative: true,
+	}
+}
+
 func TestValidate(t *testing.T) {
 	entry := validEntry()
 	t.Logf("input:  %s %q", entry.Kind, entry.Name)
@@ -70,6 +91,54 @@ func TestValidateRejects(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestValidateNZB pins the two rules an NZB row adds, which only bite once a
+// second kind exists: a Usenet release has no magnet, and a client that saw
+// FlagMagnetOnly on one would offer a download that cannot start.
+func TestValidateNZB(t *testing.T) {
+	entry := validNZBEntry()
+	t.Logf("input:  %s %q", entry.Kind, entry.Name)
+
+	if err := entry.Validate(); err != nil {
+		t.Fatalf("a well-formed nzb entry must validate: %v", err)
+	}
+	t.Logf("output: accepted")
+
+	for _, c := range []struct {
+		label  string
+		mutate func(e *Entry)
+	}{
+		{"a magnet", func(e *Entry) { e.Magnet = "magnet:?xt=urn:btih:0102030405060708090A0B0C0D0E0F1011121314" }},
+		{"the magnet-only flag", func(e *Entry) { e.Flags |= FlagMagnetOnly }},
+		{"a 20-byte identity", func(e *Entry) { e.Identity = e.Identity[:20] }},
+	} {
+		t.Run(c.label, func(t *testing.T) {
+			entry := validNZBEntry()
+			c.mutate(&entry)
+			t.Logf("input:  an nzb entry with %s", c.label)
+
+			err := entry.Validate()
+			if err == nil {
+				t.Fatalf("%s must be rejected on an nzb row", c.label)
+			}
+			t.Logf("output: %v", err)
+
+			if !errors.Is(err, ErrInvalidEntry) {
+				t.Errorf("got %v, want it to wrap %v", err, ErrInvalidEntry)
+			}
+		})
+	}
+
+	// The same two things are fine on a torrent row, which is what makes these
+	// rules about the kind rather than about the fields.
+	torrent := validEntry()
+	torrent.Magnet = "magnet:?xt=urn:btih:0102030405060708090A0B0C0D0E0F1011121314"
+	torrent.Flags |= FlagMagnetOnly
+	if err := torrent.Validate(); err != nil {
+		t.Errorf("a torrent row may carry a magnet: %v", err)
+	}
+	t.Logf("output: the same fields are accepted on a bt-v1 row")
 }
 
 // TestMint is the server's half: a daemon sends an entry with no hash, and the

@@ -137,7 +137,99 @@ func TestParseBareMD4(t *testing.T) {
 	}
 }
 
-func TestParseNZB(t *testing.T) {
+// TestNZBDigest walks the catalogue-id form: a daemon formats it, a consumer
+// echoes it back, and FetchMetaFile turns it into a store key with no database
+// round trip.
+func TestNZBDigest(t *testing.T) {
+	var digest [32]byte
+	for i := range digest {
+		digest[i] = byte(0x10 + i)
+	}
+
+	id := NZBDigest(digest)
+	t.Logf("input:  %x\noutput: %s", digest, id)
+
+	if want := "nzb:101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F"; id != want {
+		t.Errorf("got %s, want %s", id, want)
+	}
+
+	parsed, err := Parse(id)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if parsed.Network != NetworkNZB || !bytes.Equal(parsed.Hash, digest[:]) {
+		t.Errorf("a digest-form id must decode to its bytes: %+v", parsed)
+	}
+	if parsed.String() != id {
+		t.Errorf("round trip: got %s, want %s", parsed.String(), id)
+	}
+
+	got, err := ParseNZB(id)
+	if err != nil {
+		t.Fatalf("ParseNZB: %v", err)
+	}
+	if got != digest {
+		t.Errorf("ParseNZB: got %x, want %x", got, digest)
+	}
+
+	// The reason case is normalised here and not at each call site: a daemon
+	// emits uppercase and hand-rolled client hex is lowercase, and before this
+	// the two compared unequal with nothing logged.
+	lower, err := ParseNZB(strings.ToLower(id))
+	if err != nil {
+		t.Fatalf("a lowercase id must parse: %v", err)
+	}
+	if lower != digest {
+		t.Errorf("case must not change the digest: got %x", lower)
+	}
+	t.Logf("output: the lowercase spelling decodes to the same digest")
+}
+
+func TestParseNZBRejectsATransferID(t *testing.T) {
+	const uuid = "nzb:6f8c4a1e-0f2b-4d3c-9a7e-1b2c3d4e5f60"
+	t.Logf("input:  %s", uuid)
+
+	_, err := ParseNZB(uuid)
+	if err == nil {
+		t.Fatal("a uuid names a download, not a stored release, and must be refused")
+	}
+	t.Logf("output: %v", err)
+
+	if !errors.Is(err, ErrLength) {
+		t.Errorf("got %v, want it to wrap %v", err, ErrLength)
+	}
+
+	// Parse still accepts it, because both forms have to keep parsing.
+	if _, err := Parse(uuid); err != nil {
+		t.Errorf("Parse must still accept a transfer id: %v", err)
+	}
+}
+
+// TestParseNZBOpaqueStaysOpaque pins the fall-through: the digest form is
+// recognised by being 64 hex characters, and anything else of that length stays
+// the opaque value Parse has always returned rather than becoming an error.
+// Guessing that a malformed value "meant" to be a digest is how a client ends up
+// asking for a release that does not exist.
+func TestParseNZBOpaqueStaysOpaque(t *testing.T) {
+	id := "nzb:" + strings.Repeat("ZZ", 32)
+	t.Logf("input:  %s", id)
+
+	parsed, err := Parse(id)
+	if err != nil {
+		t.Fatalf("an opaque nzb value must parse: %v", err)
+	}
+	t.Logf("output: network=%s hash=%d bytes value=%s", parsed.Network, len(parsed.Hash), parsed.Value)
+
+	if parsed.Network != NetworkNZB || len(parsed.Hash) != 0 || parsed.String() != id {
+		t.Errorf("got %+v", parsed)
+	}
+
+	if _, err := ParseNZB(id); err == nil {
+		t.Error("ParseNZB must still refuse it: it names no stored release")
+	}
+}
+
+func TestParseNZBUUID(t *testing.T) {
 	const id = "nzb:6f8c4a1e-0f2b-4d3c-9a7e-1b2c3d4e5f60"
 	t.Logf("input:  %s", id)
 

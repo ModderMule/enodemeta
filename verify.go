@@ -13,13 +13,16 @@ import (
 	"fmt"
 
 	"github.com/ModderMule/enodemeta/metahash"
+	"github.com/ModderMule/enodemeta/nzbmeta"
 	"github.com/ModderMule/enodemeta/torrentmeta"
 )
 
 // Errors returned when a metafile cannot be checked against a hash.
 var (
 	// ErrKindUnsupported means this build cannot derive an identity for that
-	// kind. Today that is only NZB.
+	// kind. Every kind version 1 defines has one, so today it means the row
+	// carried a kind from a later version of the scheme — which a consumer must
+	// drop rather than guess at.
 	ErrKindUnsupported = errors.New("enodemeta: no identity function for this kind")
 
 	// ErrVerification means the metafile is not the one the hash described.
@@ -68,6 +71,11 @@ func VerifyMetaFile(hash metahash.Hash, metafile []byte) error {
 // For a torrent it accepts either a whole .torrent or the bare info dictionary,
 // because both spellings occur: BEP 9 transfers the info dictionary alone,
 // while a metafile served over the API is a complete file.
+//
+// For an NZB it is the canonical digest of §3.4, over the article message-ids
+// rather than over the bytes. That is what lets a daemon serve a copy with the
+// <head> stripped — redacting a password — and still have the client's fold
+// check pass.
 func IdentityOf(kind metahash.Kind, metafile []byte) ([]byte, error) {
 	switch kind {
 	case metahash.KindBTV1, metahash.KindBTV2:
@@ -84,10 +92,12 @@ func IdentityOf(kind metahash.Kind, metafile []byte) ([]byte, error) {
 		return identity, nil
 
 	case metahash.KindNZB:
-		// ToDo: implement the canonical NZB digest of §3.4 when the usenet
-		// sister daemon lands. It belongs in a nzbmeta subpackage here, not in
-		// that repository, because eNode-go has to verify NZB rows too.
-		return nil, fmt.Errorf("%w: %s", ErrKindUnsupported, kind)
+		identity, err := nzbmeta.IdentityOf(metafile)
+		if err != nil {
+			return nil, fmt.Errorf("enodemeta: %w", err)
+		}
+
+		return identity[:], nil
 
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrKindUnsupported, kind)

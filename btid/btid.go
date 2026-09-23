@@ -4,7 +4,15 @@
 //	ed2k:<32 hex>      an eD2K MD4
 //	bt:v1:<40 hex>     a v1 or hybrid torrent — the v1 hash stays the swarm identity
 //	bt:v2:<64 hex>     a v2-only torrent
-//	nzb:<uuid>         a Usenet release, minted when it is added
+//	nzb:<64 hex>       a Usenet release, named by its canonical NZB digest
+//	nzb:<uuid>         a client-minted Usenet transfer id
+//
+// The two nzb spellings are different objects and both must keep parsing. The
+// digest form is a *catalogue* id: it is recomputable from the .nzb alone, so a
+// re-crawl, a restore and a repost of the same articles all collapse to one
+// release, where a freshly minted uuid would have made each of them a new one.
+// The uuid form is a client-side transfer id (eNode-go plan §8.5), which names a
+// download rather than a release.
 //
 // Two rules travel with the format, and both are here because they were learned
 // the hard way:
@@ -74,11 +82,12 @@ var (
 type ID struct {
 	Network Network
 
-	// Hash is the raw hash bytes: 16 for ed2k, 20 for bt:v1, 32 for bt:v2.
-	// Empty for nzb, whose id is an opaque uuid.
+	// Hash is the raw hash bytes: 16 for ed2k, 20 for bt:v1, 32 for bt:v2 and
+	// 32 for an nzb digest. Empty for an nzb uuid, which is opaque.
 	Hash []byte
 
-	// Value is the part after the prefix, as written.
+	// Value is the part after the prefix, normalised to uppercase hex when
+	// there is a Hash and left exactly as written when there is not.
 	Value string
 }
 
@@ -108,9 +117,44 @@ func V2(infohash [32]byte) string {
 	return PrefixBTV2 + upperHex(infohash[:])
 }
 
-// NZB formats a Usenet release's id.
+// NZB formats a client-minted Usenet transfer id from a uuid.
+//
+// Kept rather than deprecated away: a transfer id genuinely is a different
+// object from a catalogue id, and both have to keep parsing. A daemon
+// publishing a release wants NZBDigest.
 func NZB(uuid string) string {
 	return PrefixNZB + uuid
+}
+
+// NZBDigest formats a Usenet release's catalogue id from its canonical NZB
+// digest — the 32 bytes nzbmeta.Identity returns.
+func NZBDigest(digest [32]byte) string {
+	return PrefixNZB + upperHex(digest[:])
+}
+
+// ParseNZB reads a catalogue id of the digest form and returns the digest.
+//
+// It is the whole of what FetchMetaFile needs: the store is content-addressed by
+// identity and the identity is in the id, so a metafile is served without a
+// database round trip at all. A uuid-form id is refused here — a transfer id
+// names no stored release — while Parse accepts both.
+func ParseNZB(s string) ([32]byte, error) {
+	var digest [32]byte
+
+	id, err := Parse(s)
+	if err != nil {
+		return digest, err
+	}
+	if id.Network != NetworkNZB {
+		return digest, fmt.Errorf("%w: %s is not an nzb id", ErrFormat, id.Network)
+	}
+	if len(id.Hash) != len(digest) {
+		return digest, fmt.Errorf("%w: nzb:%s is a transfer id, not a release digest", ErrLength, id.Value)
+	}
+
+	copy(digest[:], id.Hash)
+
+	return digest, nil
 }
 
 // Torrent formats whichever id a torrent should carry, following rule 2: a
@@ -150,6 +194,17 @@ func Parse(s string) (ID, error) {
 		value := s[len(PrefixNZB):]
 		if value == "" {
 			return ID{}, fmt.Errorf("%w: an nzb id needs a value", ErrFormat)
+		}
+
+		// 64 hex characters is the canonical digest; a uuid is 36 with dashes or
+		// 32 without, so the two forms cannot be confused. Normalising the case
+		// here is the point of doing it in one place: before this, Parse returned
+		// the value as written, so a daemon emitting uppercase and a hand-rolled
+		// client emitting lowercase compared unequal with nothing logged.
+		if len(value) == 2*32 {
+			if id, err := parseHashID(NetworkNZB, value, 32); err == nil {
+				return id, nil
+			}
 		}
 
 		return ID{Network: NetworkNZB, Value: value}, nil

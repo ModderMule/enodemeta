@@ -32,6 +32,12 @@ func FromName(name string) string {
 		return ""
 	}
 
+	// The deliberate non-entries come first, so a later edit to byExtension
+	// cannot quietly overrule them.
+	if neverTyped[ext] {
+		return ""
+	}
+
 	if t, ok := byExtension[ext]; ok {
 		return t
 	}
@@ -75,6 +81,24 @@ func Extension(name string) string {
 
 // -- internals ---------------------------------------------------------------
 
+// neverTyped are the extensions that deliberately get no type at all.
+//
+// All three are transport artefacts of a Usenet posting rather than content
+// somebody searched for, and typing them would make a filtered search worse.
+// ".nfo" is the one that has to be said out loud: it is a text file, so the
+// obvious entry is Doc — and then every Doc-filtered search comes back full of
+// release notes instead of documents, on a catalogue where nearly every release
+// ships one. ".par2" and ".sfv" are repair and checksum data, and a release's
+// recovery volumes outnumber its files.
+//
+// A row typed "" is invisible to a filtered search and still visible to an
+// unfiltered one, which is the right outcome for all three.
+var neverTyped = map[string]bool{
+	"nfo":  true,
+	"par2": true,
+	"sfv":  true,
+}
+
 // byExtension is eMule's table, extended with the formats that appeared after
 // it stopped being updated: a crawl is full of .mkv, .webm, .opus and .zst, and
 // a release typed "" is one a filtered search never shows.
@@ -86,6 +110,10 @@ var byExtension = map[string]string{
 	"mka": Audio, "mp1": Audio, "mp2": Audio, "mp3": Audio, "mpa": Audio,
 	"mpc": Audio, "oga": Audio, "ogg": Audio, "opus": Audio, "ra": Audio,
 	"shn": Audio, "wav": Audio, "wma": Audio, "wv": Audio,
+	// Audiobooks and the high-resolution formats, which is what the Usenet
+	// audio groups post that the torrent side rarely sees.
+	"aa": Audio, "aax": Audio, "dff": Audio, "dsf": Audio, "m4b": Audio,
+	"spx": Audio, "tta": Audio,
 
 	// Video
 	"3gp": Video, "asf": Video, "avi": Video, "divx": Video, "flv": Video,
@@ -93,7 +121,7 @@ var byExtension = map[string]string{
 	"mov": Video, "mp4": Video, "mpe": Video, "mpeg": Video, "mpg": Video,
 	"mpv": Video, "mts": Video, "ogm": Video, "ogv": Video, "qt": Video,
 	"rm": Video, "rmvb": Video, "ts": Video, "vob": Video, "webm": Video,
-	"wmv": Video, "xvid": Video,
+	"wmv": Video, "xvid": Video, "evo": Video, "f4v": Video, "mk3d": Video,
 
 	// Image
 	"avif": Image, "bmp": Image, "gif": Image, "heic": Image, "ico": Image,
@@ -109,12 +137,19 @@ var byExtension = map[string]string{
 	"ods": Document, "odt": Document, "pdf": Document, "ppt": Document,
 	"pptx": Document, "ps": Document, "rtf": Document, "srt": Document,
 	"sub": Document, "txt": Document, "xls": Document, "xlsx": Document,
+	// Subtitles and comics, which a Usenet catalogue is full of and a torrent
+	// one is not. A subtitle is a document: it is what a user opens next to the
+	// video, and eMule's own table has "srt" and "sub" already.
+	"ass": Document, "azw": Document, "cb7": Document, "cbt": Document,
+	"idx": Document, "lrf": Document, "ssa": Document, "sup": Document,
+	"vtt": Document,
 
 	// Programs
 	"apk": Program, "app": Program, "appimage": Program, "bat": Program,
 	"com": Program, "deb": Program, "dll": Program, "exe": Program,
 	"ipa": Program, "jar": Program, "msi": Program, "pkg": Program,
-	"rpm": Program, "sh": Program, "so": Program,
+	"rpm": Program, "sh": Program, "so": Program, "flatpak": Program,
+	"msix": Program, "run": Program, "snap": Program,
 
 	// Archives
 	"7z": Archive, "ace": Archive, "arj": Archive, "br": Archive,
@@ -122,7 +157,8 @@ var byExtension = map[string]string{
 	"lz": Archive, "lzh": Archive, "lzma": Archive, "rar": Archive,
 	"tar": Archive, "taz": Archive, "tbz": Archive, "tgz": Archive,
 	"txz": Archive, "xz": Archive, "z": Archive, "zip": Archive,
-	"zipx": Archive, "zst": Archive,
+	"zipx": Archive, "zst": Archive, "lz4": Archive, "sit": Archive,
+	"sitx": Archive, "zpaq": Archive,
 
 	// CD/DVD images
 	"bin": CDImage, "ccd": CDImage, "cdi": CDImage, "cue": CDImage,
