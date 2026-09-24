@@ -1,0 +1,287 @@
+{
+  "scheme": "enode.meta.v1",
+  "note": "Cross-repository test vectors for the canonical NZB identity digest (see eNode-go docs/meta-search-torrent-usenet-plan.local.md section 3.4, and usenet-crawler docs/nzb-identity.md, which is the document a port is written from). Every implementation — eNode-go, eMuleQt and the crawler daemons — must reproduce this file exactly. Each vector carries the pre-image as text and as hex, because a digest mismatch says nothing and a pre-image mismatch says everything. Exactly one of nzb and nzbHex is set per vector; nzbHex carries the documents that are not valid UTF-8. Regenerate with: go test ./nzbmeta -update",
+  "identityPrefixText": "nzb1\n",
+  "identity": [
+    {
+      "label": "the baseline: one file, two articles",
+      "note": "Read this one first. Everything below is a variation on it, and most of them must produce this exact digest.",
+      "nzb": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cnzb xmlns=\"http://www.newzbin.com/DTD/2003/nzb\"\u003e\n  \u003cfile poster=\"p@example.invalid\" date=\"1700000000\" subject=\"[1/1] - \u0026#34;rel.part01.rar\u0026#34; yEnc (1/2)\"\u003e\n    \u003cgroups\u003e\u003cgroup\u003ealt.binaries.test\u003c/group\u003e\u003c/groups\u003e\n    \u003csegments\u003e\n      \u003csegment bytes=\"700000\" number=\"1\"\u003ea1@example.invalid\u003c/segment\u003e\n      \u003csegment bytes=\"700001\" number=\"2\"\u003ea2@example.invalid\u003c/segment\u003e\n    \u003c/segments\u003e\n  \u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "files": 1,
+      "droppedFiles": 0,
+      "segments": 2,
+      "protected": false,
+      "repaired": false,
+      "preimageText": "nzb1\n1:a1@example.invalid\n2:a2@example.invalid\n",
+      "preimageHex": "6E7A62310A313A6131406578616D706C652E696E76616C69640A323A6132406578616D706C652E696E76616C69640A",
+      "digestHex": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "fold10Hex": "FF5FE9D5BF58D3F6676B",
+      "catalogId": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B01320000FF5FE9D5BF58D3F6676B"
+      ]
+    },
+    {
+      "label": "two files, taken in document order",
+      "note": "The second file's articles follow the first's, whatever their numbers are.",
+      "nzb": "\u003cnzb\u003e\n  \u003cfile subject=\"second\"\u003e\u003csegments\u003e\u003csegment number=\"1\"\u003ez@example.invalid\u003c/segment\u003e\u003c/segments\u003e\u003c/file\u003e\n  \u003cfile subject=\"first\"\u003e\u003csegments\u003e\u003csegment number=\"1\"\u003ea@example.invalid\u003c/segment\u003e\u003c/segments\u003e\u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "files": 2,
+      "droppedFiles": 0,
+      "segments": 2,
+      "protected": false,
+      "repaired": false,
+      "preimageText": "nzb1\n1:z@example.invalid\n1:a@example.invalid\n",
+      "preimageHex": "6E7A62310A313A7A406578616D706C652E696E76616C69640A313A61406578616D706C652E696E76616C69640A",
+      "digestHex": "84DD8DAED21212A918A26A28B7BDF8E918236930B982999F9D7D69085F0E16A9",
+      "fold10Hex": "41DEA38CB78663822E9C",
+      "catalogId": "84DD8DAED21212A918A26A28B7BDF8E918236930B982999F9D7D69085F0E16A9",
+      "wholeSetMetaHashHex": "ED2B0133FFFF41DEA38CB78663822E9C",
+      "fileMetaHashHex": [
+        "ED2B0133000041DEA38CB78663822E9C",
+        "ED2B0133010041DEA38CB78663822E9C"
+      ]
+    },
+    {
+      "label": "segments shuffled in the XML",
+      "note": "Rule 2: sorted ascending by @number, so the XML order does not matter. Same digest as the baseline.",
+      "nzb": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cnzb xmlns=\"http://www.newzbin.com/DTD/2003/nzb\"\u003e\n  \u003cfile poster=\"p@example.invalid\" date=\"1700000000\" subject=\"[1/1] - \u0026#34;rel.part01.rar\u0026#34; yEnc (1/2)\"\u003e\n    \u003cgroups\u003e\u003cgroup\u003ealt.binaries.test\u003c/group\u003e\u003c/groups\u003e\n    \u003csegments\u003e\n      \u003csegment bytes=\"700001\" number=\"2\"\u003ea2@example.invalid\u003c/segment\u003e\n      \u003csegment bytes=\"700000\" number=\"1\"\u003ea1@example.invalid\u003c/segment\u003e\n    \u003c/segments\u003e\n  \u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "files": 1,
+      "droppedFiles": 0,
+      "segments": 2,
+      "protected": false,
+      "repaired": false,
+      "preimageText": "nzb1\n1:a1@example.invalid\n2:a2@example.invalid\n",
+      "preimageHex": "6E7A62310A313A6131406578616D706C652E696E76616C69640A323A6132406578616D706C652E696E76616C69640A",
+      "digestHex": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "fold10Hex": "FF5FE9D5BF58D3F6676B",
+      "catalogId": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B01320000FF5FE9D5BF58D3F6676B"
+      ]
+    },
+    {
+      "label": "a padded @number, an absent one and a duplicate",
+      "note": "Rules 2, 3 and 4: \"007\" is 7, an absent number is 0, and two segments claiming one number keep their document order.",
+      "nzb": "\u003cnzb\u003e\u003cfile subject=\"x\"\u003e\u003csegments\u003e\u003csegment number=\"007\"\u003eg@example.invalid\u003c/segment\u003e\u003csegment\u003enone@example.invalid\u003c/segment\u003e\u003csegment number=\"2\"\u003esecond@example.invalid\u003c/segment\u003e\u003csegment number=\"2\"\u003efirst@example.invalid\u003c/segment\u003e\u003c/segments\u003e\u003c/file\u003e\u003c/nzb\u003e\n",
+      "files": 1,
+      "droppedFiles": 0,
+      "segments": 4,
+      "protected": false,
+      "repaired": false,
+      "preimageText": "nzb1\n0:none@example.invalid\n2:second@example.invalid\n2:first@example.invalid\n7:g@example.invalid\n",
+      "preimageHex": "6E7A62310A303A6E6F6E65406578616D706C652E696E76616C69640A323A7365636F6E64406578616D706C652E696E76616C69640A323A6669727374406578616D706C652E696E76616C69640A373A67406578616D706C652E696E76616C69640A",
+      "digestHex": "9923039ACB5086C15DFF0F93208027ED055E3626C6150F93E6BC89EE129406A6",
+      "fold10Hex": "56032C890A010A71794D",
+      "catalogId": "9923039ACB5086C15DFF0F93208027ED055E3626C6150F93E6BC89EE129406A6",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B0132000056032C890A010A71794D"
+      ]
+    },
+    {
+      "label": "a bracketed id beside a bare one, and one carrying an entity",
+      "note": "Rule 5: entities resolved, whitespace trimmed, one angle bracket off each end. All three ids are written differently and read the same way.",
+      "nzb": "\u003cnzb\u003e\u003cfile subject=\"x\"\u003e\u003csegments\u003e\u003csegment number=\"1\"\u003e\u0026lt;a@example.invalid\u0026gt;\u003c/segment\u003e\u003csegment number=\"2\"\u003e   b@example.invalid   \u003c/segment\u003e\u003csegment number=\"3\"\u003ec\u0026amp;d@example.invalid\u003c/segment\u003e\u003c/segments\u003e\u003c/file\u003e\u003c/nzb\u003e\n",
+      "files": 1,
+      "droppedFiles": 0,
+      "segments": 3,
+      "protected": false,
+      "repaired": false,
+      "preimageText": "nzb1\n1:a@example.invalid\n2:b@example.invalid\n3:c\u0026d@example.invalid\n",
+      "preimageHex": "6E7A62310A313A61406578616D706C652E696E76616C69640A323A62406578616D706C652E696E76616C69640A333A632664406578616D706C652E696E76616C69640A",
+      "digestHex": "2C20DD0F4238C82A04C248E677FE92ACAB5E80284B6AAE5278D02339F7B2D041",
+      "fold10Hex": "FFED04A3A844404D7358",
+      "catalogId": "2C20DD0F4238C82A04C248E677FE92ACAB5E80284B6AAE5278D02339F7B2D041",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B01320000FFED04A3A844404D7358"
+      ]
+    },
+    {
+      "label": "a zero-segment file beside a good one",
+      "note": "Rule 6, the load-bearing one: the empty file contributes nothing, so a reader that drops it and one that keeps it agree. This implementation drops it, and reports it as droppedFiles.",
+      "nzb": "\u003cnzb\u003e\u003cfile subject=\"nothing usable\"\u003e\u003csegments\u003e\u003csegment number=\"1\"\u003e\u003c/segment\u003e\u003csegment number=\"2\"\u003e   \u003c/segment\u003e\u003c/segments\u003e\u003c/file\u003e\u003cfile subject=\"x\"\u003e\u003csegments\u003e\u003csegment number=\"1\"\u003ea@example.invalid\u003c/segment\u003e\u003c/segments\u003e\u003c/file\u003e\u003c/nzb\u003e\n",
+      "files": 1,
+      "droppedFiles": 1,
+      "segments": 1,
+      "protected": false,
+      "repaired": false,
+      "preimageText": "nzb1\n1:a@example.invalid\n",
+      "preimageHex": "6E7A62310A313A61406578616D706C652E696E76616C69640A",
+      "digestHex": "E707C8F129AE5401DA163820B11C2F3C60E753AA74249C0F514FEA2E5B305ECE",
+      "fold10Hex": "F5CDE5E257DDDEC8D28C",
+      "catalogId": "E707C8F129AE5401DA163820B11C2F3C60E753AA74249C0F514FEA2E5B305ECE",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B01320000F5CDE5E257DDDEC8D28C"
+      ]
+    },
+    {
+      "label": "a head with a password, which does not move the digest",
+      "note": "Rule 8, and the property it buys: a daemon may serve a copy with \u003chead\u003e stripped and the client's fold check still passes. Same digest as the baseline; the meta hashes differ only by the protected flag.",
+      "nzb": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cnzb xmlns=\"http://www.newzbin.com/DTD/2003/nzb\"\u003e\n  \u003chead\u003e\n    \u003cmeta type=\"name\"\u003erel\u003c/meta\u003e\n    \u003cmeta type=\"password\"\u003ehunter2\u003c/meta\u003e\n  \u003c/head\u003e\n  \u003cfile poster=\"p@example.invalid\" date=\"1700000000\" subject=\"[1/1] - \u0026#34;rel.part01.rar\u0026#34; yEnc (1/2)\"\u003e\n    \u003cgroups\u003e\u003cgroup\u003ealt.binaries.test\u003c/group\u003e\u003c/groups\u003e\n    \u003csegments\u003e\n      \u003csegment bytes=\"700000\" number=\"1\"\u003ea1@example.invalid\u003c/segment\u003e\n      \u003csegment bytes=\"700001\" number=\"2\"\u003ea2@example.invalid\u003c/segment\u003e\n    \u003c/segments\u003e\n  \u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "files": 1,
+      "droppedFiles": 0,
+      "segments": 2,
+      "protected": true,
+      "repaired": false,
+      "preimageText": "nzb1\n1:a1@example.invalid\n2:a2@example.invalid\n",
+      "preimageHex": "6E7A62310A313A6131406578616D706C652E696E76616C69640A323A6132406578616D706C652E696E76616C69640A",
+      "digestHex": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "fold10Hex": "FF5FE9D5BF58D3F6676B",
+      "catalogId": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B01360000FF5FE9D5BF58D3F6676B"
+      ]
+    },
+    {
+      "label": "a wrong namespace",
+      "note": "Elements are matched on their local name. Same digest as the baseline.",
+      "nzb": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cnzb xmlns=\"http://example.invalid/not-nzb\"\u003e\n  \u003cfile poster=\"p@example.invalid\" date=\"1700000000\" subject=\"[1/1] - \u0026#34;rel.part01.rar\u0026#34; yEnc (1/2)\"\u003e\n    \u003cgroups\u003e\u003cgroup\u003ealt.binaries.test\u003c/group\u003e\u003c/groups\u003e\n    \u003csegments\u003e\n      \u003csegment bytes=\"700000\" number=\"1\"\u003ea1@example.invalid\u003c/segment\u003e\n      \u003csegment bytes=\"700001\" number=\"2\"\u003ea2@example.invalid\u003c/segment\u003e\n    \u003c/segments\u003e\n  \u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "files": 1,
+      "droppedFiles": 0,
+      "segments": 2,
+      "protected": false,
+      "repaired": false,
+      "preimageText": "nzb1\n1:a1@example.invalid\n2:a2@example.invalid\n",
+      "preimageHex": "6E7A62310A313A6131406578616D706C652E696E76616C69640A323A6132406578616D706C652E696E76616C69640A",
+      "digestHex": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "fold10Hex": "FF5FE9D5BF58D3F6676B",
+      "catalogId": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B01320000FF5FE9D5BF58D3F6676B"
+      ]
+    },
+    {
+      "label": "no namespace at all",
+      "note": "Same digest as the baseline.",
+      "nzb": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cnzb\u003e\n  \u003cfile poster=\"p@example.invalid\" date=\"1700000000\" subject=\"[1/1] - \u0026#34;rel.part01.rar\u0026#34; yEnc (1/2)\"\u003e\n    \u003cgroups\u003e\u003cgroup\u003ealt.binaries.test\u003c/group\u003e\u003c/groups\u003e\n    \u003csegments\u003e\n      \u003csegment bytes=\"700000\" number=\"1\"\u003ea1@example.invalid\u003c/segment\u003e\n      \u003csegment bytes=\"700001\" number=\"2\"\u003ea2@example.invalid\u003c/segment\u003e\n    \u003c/segments\u003e\n  \u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "files": 1,
+      "droppedFiles": 0,
+      "segments": 2,
+      "protected": false,
+      "repaired": false,
+      "preimageText": "nzb1\n1:a1@example.invalid\n2:a2@example.invalid\n",
+      "preimageHex": "6E7A62310A313A6131406578616D706C652E696E76616C69640A323A6132406578616D706C652E696E76616C69640A",
+      "digestHex": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "fold10Hex": "FF5FE9D5BF58D3F6676B",
+      "catalogId": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B01320000FF5FE9D5BF58D3F6676B"
+      ]
+    },
+    {
+      "label": "a multi-file release, which has a whole-set row",
+      "note": "Three files, so wholeSetMetaHashHex is present and every row shares the ten digest bytes. A single-file release has no whole-set row at all.",
+      "nzb": "\u003cnzb xmlns=\"http://www.newzbin.com/DTD/2003/nzb\"\u003e\n  \u003cfile subject=\"[1/3] - \u0026#34;rel.part01.rar\u0026#34; yEnc (1/2)\"\u003e\n    \u003csegments\u003e\n      \u003csegment bytes=\"700000\" number=\"1\"\u003ea1@example.invalid\u003c/segment\u003e\n      \u003csegment bytes=\"700000\" number=\"2\"\u003ea2@example.invalid\u003c/segment\u003e\n    \u003c/segments\u003e\n  \u003c/file\u003e\n  \u003cfile subject=\"[2/3] - \u0026#34;rel.nfo\u0026#34; yEnc (1/1)\"\u003e\n    \u003csegments\u003e\u003csegment bytes=\"2000\" number=\"1\"\u003en1@example.invalid\u003c/segment\u003e\u003c/segments\u003e\n  \u003c/file\u003e\n  \u003cfile subject=\"[3/3] - \u0026#34;rel.vol000+01.par2\u0026#34; yEnc (1/1)\"\u003e\n    \u003csegments\u003e\u003csegment bytes=\"700000\" number=\"1\"\u003ev1@example.invalid\u003c/segment\u003e\u003c/segments\u003e\n  \u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "files": 3,
+      "droppedFiles": 0,
+      "segments": 4,
+      "protected": false,
+      "repaired": false,
+      "preimageText": "nzb1\n1:a1@example.invalid\n2:a2@example.invalid\n1:n1@example.invalid\n1:v1@example.invalid\n",
+      "preimageHex": "6E7A62310A313A6131406578616D706C652E696E76616C69640A323A6132406578616D706C652E696E76616C69640A313A6E31406578616D706C652E696E76616C69640A313A7631406578616D706C652E696E76616C69640A",
+      "digestHex": "8FCD9A6D189045F16AA9E89FD045057C993BBE759BA76995CD5F44F871F1059D",
+      "fold10Hex": "F96823BDD0B39832A52D",
+      "catalogId": "8FCD9A6D189045F16AA9E89FD045057C993BBE759BA76995CD5F44F871F1059D",
+      "wholeSetMetaHashHex": "ED2B0133FFFFF96823BDD0B39832A52D",
+      "fileMetaHashHex": [
+        "ED2B01330000F96823BDD0B39832A52D",
+        "ED2B01330100F96823BDD0B39832A52D",
+        "ED2B01330200F96823BDD0B39832A52D"
+      ]
+    },
+    {
+      "label": "an invalid-UTF-8 subject, repaired",
+      "note": "The document claims UTF-8 and carries a latin-1 byte. It is repaired rather than refused, because Qt's codec substitutes where Go's decoder errors, and the bytes the digest covers are ASCII either way — so the digest is the baseline's.",
+      "nzbHex": "3C3F786D6C2076657273696F6E3D22312E302220656E636F64696E673D225554462D38223F3E0A3C6E7A6220786D6C6E733D22687474703A2F2F7777772E6E65777A62696E2E636F6D2F4454442F323030332F6E7A62223E0A20203C66696C6520706F737465723D2270406578616D706C652E696E76616C69642220646174653D223137303030303030303022207375626A6563743D22436166E9205B312F315D202D20262333343B72656C2E7061727430312E726172262333343B2079456E632028312F3229223E0A202020203C67726F7570733E3C67726F75703E616C742E62696E61726965732E746573743C2F67726F75703E3C2F67726F7570733E0A202020203C7365676D656E74733E0A2020202020203C7365676D656E742062797465733D2237303030303022206E756D6265723D2231223E6131406578616D706C652E696E76616C69643C2F7365676D656E743E0A2020202020203C7365676D656E742062797465733D2237303030303122206E756D6265723D2232223E6132406578616D706C652E696E76616C69643C2F7365676D656E743E0A202020203C2F7365676D656E74733E0A20203C2F66696C653E0A3C2F6E7A623E0A",
+      "files": 1,
+      "droppedFiles": 0,
+      "segments": 2,
+      "protected": false,
+      "repaired": true,
+      "preimageText": "nzb1\n1:a1@example.invalid\n2:a2@example.invalid\n",
+      "preimageHex": "6E7A62310A313A6131406578616D706C652E696E76616C69640A323A6132406578616D706C652E696E76616C69640A",
+      "digestHex": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "fold10Hex": "FF5FE9D5BF58D3F6676B",
+      "catalogId": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B01320000FF5FE9D5BF58D3F6676B"
+      ]
+    },
+    {
+      "label": "a latin-1 declaration, transcoded",
+      "note": "The one non-UTF-8 charset this package reads. Nothing is flagged, because nothing was guessed.",
+      "nzbHex": "3C3F786D6C2076657273696F6E3D22312E302220656E636F64696E673D2249534F2D383835392D31223F3E0A3C6E7A623E3C66696C65207375626A6563743D22436166E92E52656C656173652028312F3129223E3C7365676D656E74733E3C7365676D656E742062797465733D223122206E756D6265723D2231223E6131406578616D706C652E696E76616C69643C2F7365676D656E743E3C2F7365676D656E74733E3C2F66696C653E3C2F6E7A623E0A",
+      "files": 1,
+      "droppedFiles": 0,
+      "segments": 1,
+      "protected": false,
+      "repaired": false,
+      "preimageText": "nzb1\n1:a1@example.invalid\n",
+      "preimageHex": "6E7A62310A313A6131406578616D706C652E696E76616C69640A",
+      "digestHex": "A1190C89F71FEE61D2C15533A493BC24780682CC1E09DC2C6D9AD46B8D52C720",
+      "fold10Hex": "2D03743626A1420CDD5F",
+      "catalogId": "A1190C89F71FEE61D2C15533A493BC24780682CC1E09DC2C6D9AD46B8D52C720",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B013200002D03743626A1420CDD5F"
+      ]
+    }
+  ],
+  "sameIdentity": [
+    {
+      "label": "a repost under a different group, poster and subject",
+      "note": "The whole point of rule 8. Two postings of the same articles are one release, which is what stops a re-post doubling a catalogue.",
+      "a": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cnzb xmlns=\"http://www.newzbin.com/DTD/2003/nzb\"\u003e\n  \u003cfile poster=\"p@example.invalid\" date=\"1700000000\" subject=\"[1/1] - \u0026#34;rel.part01.rar\u0026#34; yEnc (1/2)\"\u003e\n    \u003cgroups\u003e\u003cgroup\u003ealt.binaries.test\u003c/group\u003e\u003c/groups\u003e\n    \u003csegments\u003e\n      \u003csegment bytes=\"700000\" number=\"1\"\u003ea1@example.invalid\u003c/segment\u003e\n      \u003csegment bytes=\"700001\" number=\"2\"\u003ea2@example.invalid\u003c/segment\u003e\n    \u003c/segments\u003e\n  \u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "b": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cnzb xmlns=\"http://www.newzbin.com/DTD/2003/nzb\"\u003e\n  \u003cfile poster=\"someone.else@example.invalid\" date=\"1800000000\" subject=\"a completely different subject\"\u003e\n    \u003cgroups\u003e\u003cgroup\u003ealt.binaries.elsewhere\u003c/group\u003e\u003cgroup\u003ealt.binaries.second\u003c/group\u003e\u003c/groups\u003e\n    \u003csegments\u003e\n      \u003csegment bytes=\"7\" number=\"2\"\u003ea2@example.invalid\u003c/segment\u003e\n      \u003csegment bytes=\"7\" number=\"1\"\u003ea1@example.invalid\u003c/segment\u003e\n    \u003c/segments\u003e\n  \u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "digestHex": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18"
+    },
+    {
+      "label": "the same document with its head stripped",
+      "note": "What catalog.serve_password_meta relies on: redacting a password leaves the release verifiable.",
+      "a": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cnzb xmlns=\"http://www.newzbin.com/DTD/2003/nzb\"\u003e\n  \u003chead\u003e\n    \u003cmeta type=\"name\"\u003erel\u003c/meta\u003e\n    \u003cmeta type=\"password\"\u003ehunter2\u003c/meta\u003e\n  \u003c/head\u003e\n  \u003cfile poster=\"p@example.invalid\" date=\"1700000000\" subject=\"[1/1] - \u0026#34;rel.part01.rar\u0026#34; yEnc (1/2)\"\u003e\n    \u003cgroups\u003e\u003cgroup\u003ealt.binaries.test\u003c/group\u003e\u003c/groups\u003e\n    \u003csegments\u003e\n      \u003csegment bytes=\"700000\" number=\"1\"\u003ea1@example.invalid\u003c/segment\u003e\n      \u003csegment bytes=\"700001\" number=\"2\"\u003ea2@example.invalid\u003c/segment\u003e\n    \u003c/segments\u003e\n  \u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "b": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cnzb xmlns=\"http://www.newzbin.com/DTD/2003/nzb\"\u003e\n  \u003cfile poster=\"p@example.invalid\" date=\"1700000000\" subject=\"[1/1] - \u0026#34;rel.part01.rar\u0026#34; yEnc (1/2)\"\u003e\n    \u003cgroups\u003e\u003cgroup\u003ealt.binaries.test\u003c/group\u003e\u003c/groups\u003e\n    \u003csegments\u003e\n      \u003csegment bytes=\"700000\" number=\"1\"\u003ea1@example.invalid\u003c/segment\u003e\n      \u003csegment bytes=\"700001\" number=\"2\"\u003ea2@example.invalid\u003c/segment\u003e\n    \u003c/segments\u003e\n  \u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "digestHex": "FB380CB0C760DBDBD1BB7D6F63B0D513C91B1A49441086D5AD2BC136AC993D18"
+    },
+    {
+      "label": "the same articles grouped into one file or into two",
+      "note": "A pre-image line carries no file boundary. Surprising, and worth knowing before treating the digest as a file-list comparison.",
+      "a": "\u003cnzb\u003e\u003cfile subject=\"x\"\u003e\u003csegments\u003e\u003csegment number=\"1\"\u003ea@h\u003c/segment\u003e\u003csegment number=\"1\"\u003eb@h\u003c/segment\u003e\u003c/segments\u003e\u003c/file\u003e\u003c/nzb\u003e",
+      "b": "\u003cnzb\u003e\u003cfile subject=\"x\"\u003e\u003csegments\u003e\u003csegment number=\"1\"\u003ea@h\u003c/segment\u003e\u003c/segments\u003e\u003c/file\u003e\u003cfile subject=\"y\"\u003e\u003csegments\u003e\u003csegment number=\"1\"\u003eb@h\u003c/segment\u003e\u003c/segments\u003e\u003c/file\u003e\u003c/nzb\u003e",
+      "digestHex": "A8E786397EEBE091B60DD5D386679D351F8B83529C8E64211B626AE29C3F6B71"
+    }
+  ],
+  "reject": [
+    {
+      "label": "empty",
+      "reason": "a fetch that returned nothing is not a document"
+    },
+    {
+      "label": "an indexer's HTML error page served under a .nzb name",
+      "nzb": "\u003chtml\u003e\u003chead\u003e\u003ctitle\u003e404\u003c/title\u003e\u003c/head\u003e\u003cbody\u003eNot found\u003c/body\u003e\u003c/html\u003e\n",
+      "reason": "it parses and lists no file; calling that an empty success puts a permanently stalled item in a queue"
+    },
+    {
+      "label": "truncated mid-element",
+      "nzb": "\u003cnzb\u003e\u003cfile subject=\"x\"\u003e\u003csegments\u003e\u003csegment number=\"1\"\u003ea@example.invalid",
+      "reason": "not well-formed; a partial fetch must not become a partial release"
+    },
+    {
+      "label": "a document whose every segment has an empty message-id",
+      "nzb": "\u003cnzb\u003e\u003cfile subject=\"x\"\u003e\u003csegments\u003e\u003csegment number=\"1\"\u003e\u003c/segment\u003e\u003c/segments\u003e\u003c/file\u003e\u003c/nzb\u003e\n",
+      "reason": "every file is dropped by rule 6, so nothing is left to identify"
+    },
+    {
+      "label": "a well-formed document with a head and no files",
+      "nzb": "\u003cnzb\u003e\u003chead\u003e\u003cmeta type=\"name\"\u003enothing\u003c/meta\u003e\u003c/head\u003e\u003c/nzb\u003e\n",
+      "reason": "a release with no articles has no identity"
+    }
+  ]
+}

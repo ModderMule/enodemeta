@@ -1,0 +1,154 @@
+{
+  "scheme": "enode.meta.v1",
+  "note": "Cross-repository test vectors for file_index (see docs/ingest-contract.md amendment 4). file_index is libtorrent's file_index_t: padding files are counted in the numbering and get no row of their own, so a selected file's index has gaps — it has to, because that index is what a BEP 53 so= and a meta row both refer to. For a v2-only torrent it is the file tree's traversal order; for an NZB it is the position among the files that survived parsing. fileCount is the non-padding count and comes from the metafile, never from how many rows were emitted. Not covered here because it needs 65536 files: an index whose low 16 bits are 0xFFFF is refused rather than renumbered, and metahash's own vectors pin that. Regenerate with: go test . -update",
+  "releases": [
+    {
+      "label": "v1, a single file",
+      "note": "One row at index 0, the multi-file flag clear, and no whole-set row: it would say nothing a plain row does not.",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "metafileHex": "64363A6C656E677468693130373337343138323465343A6E616D6531363A7562756E74752D32342E30342E69736F31323A7069656365206C656E6774686932363231343465363A70696563657338303A303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383965",
+      "identityHex": "B3F732919F6A4895EA9B1BB61E91E7D8EE2DB23A",
+      "fileCount": 1,
+      "files": [
+        {
+          "index": 0,
+          "path": "ubuntu-24.04.iso",
+          "size": 1073741824,
+          "padding": false,
+          "metaHashHex": "ED2B01100000A8412C0078B2A6B858A1"
+        }
+      ],
+      "wholeSetMetaHashHex": ""
+    },
+    {
+      "label": "v1 multi-file, with a BEP 47 pad and a BitComet pad",
+      "note": "The two padding conventions, interleaved with real files. Indexes 1 and 3 are pads and produce no row, so the real files are 0, 2 and 4 — the gaps are the point.",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "metafileHex": "64353A66696C65736C64363A6C656E6774686937333430303332303065343A706174686C32313A536F6D652E52656C656173652E323032362E6D6B76656564343A61747472313A70363A6C656E67746869313633383465343A706174686C343A2E706164353A3136333834656564363A6C656E677468693430393665343A706174686C32313A536F6D652E52656C656173652E323032362E6E666F656564363A6C656E677468693831393265343A706174686C31393A5F5F5F5F5F70616464696E675F66696C655F33343A38313932656564363A6C656E6774686931323538323931323065343A706174686C363A45787472617331303A53616D706C652E6D6B76656565343A6E616D6531373A536F6D652E52656C656173652E3230323631323A7069656365206C656E6774686932363231343465363A7069656365733136303A3031323334353637383930313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383965",
+      "identityHex": "AB88795B4206E805573AAB0AB0964F7BC27153AE",
+      "fileCount": 3,
+      "files": [
+        {
+          "index": 0,
+          "path": "Some.Release.2026.mkv",
+          "size": 734003200,
+          "padding": false,
+          "metaHashHex": "ED2B011100000082C9CD0D7D2A740494"
+        },
+        {
+          "index": 1,
+          "path": ".pad/16384",
+          "size": 16384,
+          "padding": true
+        },
+        {
+          "index": 2,
+          "path": "Some.Release.2026.nfo",
+          "size": 4096,
+          "padding": false,
+          "metaHashHex": "ED2B011102000082C9CD0D7D2A740494"
+        },
+        {
+          "index": 3,
+          "path": "_____padding_file_3/8192",
+          "size": 8192,
+          "padding": true
+        },
+        {
+          "index": 4,
+          "path": "Extras/Sample.mkv",
+          "size": 125829120,
+          "padding": false,
+          "metaHashHex": "ED2B011104000082C9CD0D7D2A740494"
+        }
+      ],
+      "wholeSetMetaHashHex": "ED2B0111FFFF0082C9CD0D7D2A740494"
+    },
+    {
+      "label": "v2-only, numbered by file tree traversal",
+      "note": "A v2 torrent has no file list, so the index is the order the file tree is walked in. BEP 52 has no padding files at all.",
+      "kind": 2,
+      "kindName": "bt-v2",
+      "metafileHex": "64393A66696C65207472656564363A45787472617364393A6E6F7465732E74787464303A64363A6C656E67746869323034386531313A70696563657320726F6F7433323A4141414141414141414141414141414141414141414141414141414141414141656565393A6D6F7669652E6D6B7664303A64363A6C656E677468693934333731383430306531313A70696563657320726F6F7433323A414141414141414141414141414141414141414141414141414141414141414165656531323A6D6574612076657273696F6E693265343A6E616D6531303A76322E72656C6561736531323A7069656365206C656E677468693236323134346565",
+      "identityHex": "B8B9CF0BEB3F4764D131B7E3CEE156FE4ECC78B0E87554FFA611E47A71660415",
+      "fileCount": 2,
+      "files": [
+        {
+          "index": 0,
+          "path": "Extras/notes.txt",
+          "size": 2048,
+          "padding": false,
+          "metaHashHex": "ED2B01210000E33A55151BD0EDD2D8E7"
+        },
+        {
+          "index": 1,
+          "path": "movie.mkv",
+          "size": 943718400,
+          "padding": false,
+          "metaHashHex": "ED2B01210100E33A55151BD0EDD2D8E7"
+        }
+      ],
+      "wholeSetMetaHashHex": "ED2B0121FFFFE33A55151BD0EDD2D8E7"
+    },
+    {
+      "label": "hybrid, numbered by its v1 file list",
+      "note": "A hybrid is keyed by its v1 infohash and numbered by its v1 list, which is what the swarm and every magnet use. The v2 view must agree about the files, and a torrent whose views disagree is refused rather than catalogued.",
+      "kind": 1,
+      "kindName": "bt-v1",
+      "metafileHex": "64393A66696C65207472656564363A45787472617364393A6E6F7465732E74787464303A64363A6C656E67746869323034386531313A70696563657320726F6F7433323A4141414141414141414141414141414141414141414141414141414141414141656565393A6D6F7669652E6D6B7664303A64363A6C656E677468693934333731383430306531313A70696563657320726F6F7433323A4141414141414141414141414141414141414141414141414141414141414141656565353A66696C65736C64363A6C656E6774686939343337313834303065343A706174686C393A6D6F7669652E6D6B76656564343A61747472313A70363A6C656E67746869313633383465343A706174686C343A2E706164353A3136333834656564363A6C656E677468693230343865343A706174686C363A457874726173393A6E6F7465732E74787465656531323A6D6574612076657273696F6E693265343A6E616D6531343A6879627269642E72656C6561736531323A7069656365206C656E6774686932363231343465363A70696563657338303A303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383930313233343536373839303132333435363738393031323334353637383965",
+      "identityHex": "88A73C431923C40AF46BC6593F16870443ACF99C",
+      "fileCount": 2,
+      "files": [
+        {
+          "index": 0,
+          "path": "movie.mkv",
+          "size": 943718400,
+          "padding": false,
+          "metaHashHex": "ED2B011100004EFE03559E2787A60DF7"
+        },
+        {
+          "index": 1,
+          "path": ".pad/16384",
+          "size": 16384,
+          "padding": true
+        },
+        {
+          "index": 2,
+          "path": "Extras/notes.txt",
+          "size": 2048,
+          "padding": false,
+          "metaHashHex": "ED2B011102004EFE03559E2787A60DF7"
+        }
+      ],
+      "wholeSetMetaHashHex": "ED2B0111FFFF4EFE03559E2787A60DF7"
+    },
+    {
+      "label": "nzb, numbered by surviving document order",
+      "note": "The middle \u003cfile\u003e has no usable segment, so it is dropped before anything is numbered and the third file is index 1. Numbering it would give two implementations different indexes for the same release, and the index is what a row addresses. Every nzb row is path-authoritative.",
+      "kind": 3,
+      "kindName": "nzb",
+      "nzb": "\u003c?xml version=\"1.0\" encoding=\"UTF-8\"?\u003e\n\u003cnzb xmlns=\"http://www.newzbin.com/DTD/2003/nzb\"\u003e\n  \u003cfile subject=\"[1/3] - \u0026#34;rel.part01.rar\u0026#34; yEnc (1/2)\"\u003e\n    \u003csegments\u003e\n      \u003csegment bytes=\"700000\" number=\"1\"\u003ea1@example.invalid\u003c/segment\u003e\n      \u003csegment bytes=\"700000\" number=\"2\"\u003ea2@example.invalid\u003c/segment\u003e\n    \u003c/segments\u003e\n  \u003c/file\u003e\n  \u003cfile subject=\"empty, and therefore dropped before it is numbered\"\u003e\n    \u003csegments\u003e\u003csegment number=\"1\"\u003e\u003c/segment\u003e\u003c/segments\u003e\n  \u003c/file\u003e\n  \u003cfile subject=\"[3/3] - \u0026#34;rel.nfo\u0026#34; yEnc (1/1)\"\u003e\n    \u003csegments\u003e\u003csegment bytes=\"2000\" number=\"1\"\u003en1@example.invalid\u003c/segment\u003e\u003c/segments\u003e\n  \u003c/file\u003e\n\u003c/nzb\u003e\n",
+      "identityHex": "E0F30A4C4E6221931D9FF7F999E5B1EC7F5ED07D3D03C70E34713D989C146602",
+      "fileCount": 2,
+      "files": [
+        {
+          "index": 0,
+          "path": "[1/3] - \"rel.part01.rar\" yEnc (1/2)",
+          "size": 1400000,
+          "padding": false,
+          "metaHashHex": "ED2B013300004C0B54A7CBFF635551F6"
+        },
+        {
+          "index": 1,
+          "path": "[3/3] - \"rel.nfo\" yEnc (1/1)",
+          "size": 2000,
+          "padding": false,
+          "metaHashHex": "ED2B013301004C0B54A7CBFF635551F6"
+        }
+      ],
+      "wholeSetMetaHashHex": "ED2B0133FFFF4C0B54A7CBFF635551F6"
+    }
+  ]
+}
