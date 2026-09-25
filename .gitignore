@@ -1,0 +1,16 @@
+# Pinned protoc plugins installed by scripts/gen-proto.sh
+bin/
+
+# Test binaries and coverage
+*.test
+*.out
+coverage.*
+
+# Go workspace files
+go.work
+go.work.sum
+
+# OS and IDE specific
+.DS_Store
+.idea/
+.vscode/
