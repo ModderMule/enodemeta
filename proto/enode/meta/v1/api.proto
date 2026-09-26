@@ -32,14 +32,33 @@ service MetaApi {
   // row and the bytes cross two transports.
   //
   // Errors: invalid_argument (not a meta hash, or an unknown kind), not_found,
-  // data_loss (the catalogue's bytes do not fold to meta_hash), unavailable
+  // data_loss (the catalogue's bytes do not fold to meta_hash),
+  // failed_precondition (a magnet-only release, which has no metafile: use the
+  // row's magnet), unavailable
   // (the owning catalogue is down), unauthenticated / permission_denied (see
   // ErrorInfo), resource_exhausted (rate limit).
   rpc GetMetaFile(GetMetaFileRequest) returns (MetaFile);
 
   // Search queries the catalogues directly, beyond what the eD2K search
-  // blended in. Reserved for phase 7; a server that does not offer it answers
-  // unimplemented and says so in Caps.search_available.
+  // blended in. A server that does not offer it answers unimplemented and says
+  // so in Caps.search_available.
+  //
+  // SearchRequest.network picks torrent, Usenet or both (the default). With
+  // both, the networks' releases alternate, one from each, until one runs out.
+  //
+  // Paging counts releases, not rows: a multi-file release is several entries
+  // sharing a catalog_id, and they always arrive on the same page. Ask for the
+  // next page with SearchResponse.next_offset rather than computing it, since
+  // the server caps limit; zero means there is no further page. Pages are
+  // stable while the server caches the query, a few minutes.
+  //
+  // Each entry carries its meta_hash and catalog_id, which is all GetMetaFile
+  // needs. An entry with the magnet-only flag has no metafile: use its magnet.
+  //
+  // Errors: invalid_argument (no keyword, or a query that is too long),
+  // unavailable (every searched network is down), unauthenticated /
+  // permission_denied when Caps.search_requires_account (see ErrorInfo),
+  // resource_exhausted (rate limit).
   rpc Search(SearchRequest) returns (SearchResponse);
 }
 
@@ -74,7 +93,8 @@ enum AuthMode {
   // AUTH_MODE_PUBLIC: every call works without credentials.
   AUTH_MODE_PUBLIC = 1;
 
-  // AUTH_MODE_ACCOUNT_REQUIRED: GetMetaFile and Search need an active account.
+  // AUTH_MODE_ACCOUNT_REQUIRED: GetMetaFile needs an active account, and so
+  // does Search unless Caps.search_requires_account is false.
   AUTH_MODE_ACCOUNT_REQUIRED = 2;
 }
 
@@ -138,6 +158,15 @@ message Caps {
   // or JSON) and the raw metafile at GET {http_url}/meta/v1/{hash hex}?id=
   // {catalog_id}, for a client without a gRPC stack.
   string http_url = 8;
+
+  // search_requires_account says whether MetaApi.Search needs an active
+  // account. It can be false in AUTH_MODE_ACCOUNT_REQUIRED, when the operator
+  // lets anyone search but only accounts download.
+  bool search_requires_account = 9;
+
+  // networks are the catalogue networks MetaApi.Search can query, for a
+  // client's torrent / Usenet / both selector. Empty when search is not served.
+  repeated MetaNetwork networks = 10;
 }
 
 message GetMetaFileRequest {

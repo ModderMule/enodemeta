@@ -24,6 +24,15 @@ enum MetaKind {
   META_KIND_NZB = 3;    // Usenet; identity is the 32-byte canonical NZB digest
 }
 
+// MetaNetwork is a catalogue network: which daemon a search goes to. A network
+// serves one or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB).
+enum MetaNetwork {
+  // META_NETWORK_UNSPECIFIED: every network the server offers.
+  META_NETWORK_UNSPECIFIED = 0;
+  META_NETWORK_TORRENT = 1;
+  META_NETWORK_USENET = 2;
+}
+
 // MetaEntry is one advertised row: a release, or one file inside it.
 //
 // Fields 1 to 16 are the specification's §6.5 layout, unchanged. Fields 17 and
@@ -141,6 +150,11 @@ message SearchRequest {
   // past it returns nothing; follow SearchResponse.next_offset rather than
   // computing offsets, since the server may have capped limit.
   uint32 offset = 10;
+
+  // network limits MetaApi.Search to one network; UNSPECIFIED searches all of
+  // them. A daemon serves a single network and ignores it. kinds still applies
+  // on top, to the rows of the networks searched.
+  MetaNetwork network = 11;
 }
 
 message SearchResponse {

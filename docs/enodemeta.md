@@ -283,4 +283,6 @@ list still defers is protobuf, not XML.
 - ~~**`api.proto` (MetaApi)**~~ — built: `proto/enode/meta/v1/api.proto` defines
   `MetaApi` (`GetCaps`, `GetMetaFile`, `Search`) and `AccountApi` (`GetAuthStatus`,
   `Login`, `Logout`), reusing `MetaFile`, `MetaKind` and `Search*`. eNode-go serves
-  it; see eNode-go's `docs/meta-api.md`.
+  it; see eNode-go's `docs/meta-api.md`. `MetaApi.Search` pages by release and
+  takes `SearchRequest.network` (`MetaNetwork`: torrent, Usenet, or both by
+  default), a field the daemons ignore since each serves one network.

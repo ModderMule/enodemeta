@@ -212,6 +212,7 @@ others.
 | The id is not one this daemon's kinds use | `invalid_argument` |
 | No such release, its metafile is missing, or the keyword filter hides it | `not_found` |
 | `identity` does not match the release | `failed_precondition` |
+| The release is magnet-only (`FT_META_FLAGS` bit 3): there is no metafile | `failed_precondition` |
 | The stored bytes no longer hash to their identity | `data_loss` |
 
 For a torrent the response is a complete `.torrent`: the stored info dictionary

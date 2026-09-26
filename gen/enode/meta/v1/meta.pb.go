@@ -87,6 +87,58 @@ func (MetaKind) EnumDescriptor() ([]byte, []int) {
 	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{0}
 }
 
+// MetaNetwork is a catalogue network: which daemon a search goes to. A network
+// serves one or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB).
+type MetaNetwork int32
+
+const (
+	// META_NETWORK_UNSPECIFIED: every network the server offers.
+	MetaNetwork_META_NETWORK_UNSPECIFIED MetaNetwork = 0
+	MetaNetwork_META_NETWORK_TORRENT     MetaNetwork = 1
+	MetaNetwork_META_NETWORK_USENET      MetaNetwork = 2
+)
+
+// Enum value maps for MetaNetwork.
+var (
+	MetaNetwork_name = map[int32]string{
+		0: "META_NETWORK_UNSPECIFIED",
+		1: "META_NETWORK_TORRENT",
+		2: "META_NETWORK_USENET",
+	}
+	MetaNetwork_value = map[string]int32{
+		"META_NETWORK_UNSPECIFIED": 0,
+		"META_NETWORK_TORRENT":     1,
+		"META_NETWORK_USENET":      2,
+	}
+)
+
+func (x MetaNetwork) Enum() *MetaNetwork {
+	p := new(MetaNetwork)
+	*p = x
+	return p
+}
+
+func (x MetaNetwork) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MetaNetwork) Descriptor() protoreflect.EnumDescriptor {
+	return file_enode_meta_v1_meta_proto_enumTypes[1].Descriptor()
+}
+
+func (MetaNetwork) Type() protoreflect.EnumType {
+	return &file_enode_meta_v1_meta_proto_enumTypes[1]
+}
+
+func (x MetaNetwork) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MetaNetwork.Descriptor instead.
+func (MetaNetwork) EnumDescriptor() ([]byte, []int) {
+	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{1}
+}
+
 // MetaEntry is one advertised row: a release, or one file inside it.
 //
 // Fields 1 to 16 are the specification's §6.5 layout, unchanged. Fields 17 and
@@ -396,7 +448,11 @@ type SearchRequest struct {
 	// later page is asked for. The server searches a bounded window, so an offset
 	// past it returns nothing; follow SearchResponse.next_offset rather than
 	// computing offsets, since the server may have capped limit.
-	Offset        uint32 `protobuf:"varint,10,opt,name=offset,proto3" json:"offset,omitempty"`
+	Offset uint32 `protobuf:"varint,10,opt,name=offset,proto3" json:"offset,omitempty"`
+	// network limits MetaApi.Search to one network; UNSPECIFIED searches all of
+	// them. A daemon serves a single network and ignores it. kinds still applies
+	// on top, to the rows of the networks searched.
+	Network       MetaNetwork `protobuf:"varint,11,opt,name=network,proto3,enum=enode.meta.v1.MetaNetwork" json:"network,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -501,6 +557,13 @@ func (x *SearchRequest) GetOffset() uint32 {
 	return 0
 }
 
+func (x *SearchRequest) GetNetwork() MetaNetwork {
+	if x != nil {
+		return x.Network
+	}
+	return MetaNetwork_META_NETWORK_UNSPECIFIED
+}
+
 type SearchResponse struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Entries []*MetaEntry           `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
@@ -597,7 +660,7 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\bMetaFile\x12+\n" +
 	"\x04kind\x18\x01 \x01(\x0e2\x17.enode.meta.v1.MetaKindR\x04kind\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\fR\acontent\x12!\n" +
-	"\fcontent_type\x18\x03 \x01(\tR\vcontentType\"\xa9\x02\n" +
+	"\fcontent_type\x18\x03 \x01(\tR\vcontentType\"\xdf\x02\n" +
 	"\rSearchRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x18\n" +
 	"\aexclude\x18\x02 \x03(\tR\aexclude\x12-\n" +
@@ -611,7 +674,8 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\x04type\x18\b \x01(\tR\x04type\x12\x14\n" +
 	"\x05limit\x18\t \x01(\rR\x05limit\x12\x16\n" +
 	"\x06offset\x18\n" +
-	" \x01(\rR\x06offset\"{\n" +
+	" \x01(\rR\x06offset\x124\n" +
+	"\anetwork\x18\v \x01(\x0e2\x1a.enode.meta.v1.MetaNetworkR\anetwork\"{\n" +
 	"\x0eSearchResponse\x122\n" +
 	"\aentries\x18\x01 \x03(\v2\x18.enode.meta.v1.MetaEntryR\aentries\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x04R\x05total\x12\x1f\n" +
@@ -621,7 +685,11 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\x15META_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V1\x10\x01\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V2\x10\x02\x12\x11\n" +
-	"\rMETA_KIND_NZB\x10\x03B:Z8github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
+	"\rMETA_KIND_NZB\x10\x03*^\n" +
+	"\vMetaNetwork\x12\x1c\n" +
+	"\x18META_NETWORK_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14META_NETWORK_TORRENT\x10\x01\x12\x17\n" +
+	"\x13META_NETWORK_USENET\x10\x02B:Z8github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
 
 var (
 	file_enode_meta_v1_meta_proto_rawDescOnce sync.Once
@@ -635,25 +703,27 @@ func file_enode_meta_v1_meta_proto_rawDescGZIP() []byte {
 	return file_enode_meta_v1_meta_proto_rawDescData
 }
 
-var file_enode_meta_v1_meta_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_enode_meta_v1_meta_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_enode_meta_v1_meta_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_enode_meta_v1_meta_proto_goTypes = []any{
 	(MetaKind)(0),          // 0: enode.meta.v1.MetaKind
-	(*MetaEntry)(nil),      // 1: enode.meta.v1.MetaEntry
-	(*MetaFile)(nil),       // 2: enode.meta.v1.MetaFile
-	(*SearchRequest)(nil),  // 3: enode.meta.v1.SearchRequest
-	(*SearchResponse)(nil), // 4: enode.meta.v1.SearchResponse
+	(MetaNetwork)(0),       // 1: enode.meta.v1.MetaNetwork
+	(*MetaEntry)(nil),      // 2: enode.meta.v1.MetaEntry
+	(*MetaFile)(nil),       // 3: enode.meta.v1.MetaFile
+	(*SearchRequest)(nil),  // 4: enode.meta.v1.SearchRequest
+	(*SearchResponse)(nil), // 5: enode.meta.v1.SearchResponse
 }
 var file_enode_meta_v1_meta_proto_depIdxs = []int32{
 	0, // 0: enode.meta.v1.MetaEntry.kind:type_name -> enode.meta.v1.MetaKind
 	0, // 1: enode.meta.v1.MetaFile.kind:type_name -> enode.meta.v1.MetaKind
 	0, // 2: enode.meta.v1.SearchRequest.kinds:type_name -> enode.meta.v1.MetaKind
-	1, // 3: enode.meta.v1.SearchResponse.entries:type_name -> enode.meta.v1.MetaEntry
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	1, // 3: enode.meta.v1.SearchRequest.network:type_name -> enode.meta.v1.MetaNetwork
+	2, // 4: enode.meta.v1.SearchResponse.entries:type_name -> enode.meta.v1.MetaEntry
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_enode_meta_v1_meta_proto_init() }
@@ -666,7 +736,7 @@ func file_enode_meta_v1_meta_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_enode_meta_v1_meta_proto_rawDesc), len(file_enode_meta_v1_meta_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,

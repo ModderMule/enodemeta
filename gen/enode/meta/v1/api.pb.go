@@ -41,7 +41,8 @@ const (
 	AuthMode_AUTH_MODE_UNSPECIFIED AuthMode = 0
 	// AUTH_MODE_PUBLIC: every call works without credentials.
 	AuthMode_AUTH_MODE_PUBLIC AuthMode = 1
-	// AUTH_MODE_ACCOUNT_REQUIRED: GetMetaFile and Search need an active account.
+	// AUTH_MODE_ACCOUNT_REQUIRED: GetMetaFile needs an active account, and so
+	// does Search unless Caps.search_requires_account is false.
 	AuthMode_AUTH_MODE_ACCOUNT_REQUIRED AuthMode = 2
 )
 
@@ -263,7 +264,14 @@ type Caps struct {
 	// Connect protocol (POST {http_url}/enode.meta.v1.MetaApi/GetMetaFile, proto
 	// or JSON) and the raw metafile at GET {http_url}/meta/v1/{hash hex}?id=
 	// {catalog_id}, for a client without a gRPC stack.
-	HttpUrl       string `protobuf:"bytes,8,opt,name=http_url,json=httpUrl,proto3" json:"http_url,omitempty"`
+	HttpUrl string `protobuf:"bytes,8,opt,name=http_url,json=httpUrl,proto3" json:"http_url,omitempty"`
+	// search_requires_account says whether MetaApi.Search needs an active
+	// account. It can be false in AUTH_MODE_ACCOUNT_REQUIRED, when the operator
+	// lets anyone search but only accounts download.
+	SearchRequiresAccount bool `protobuf:"varint,9,opt,name=search_requires_account,json=searchRequiresAccount,proto3" json:"search_requires_account,omitempty"`
+	// networks are the catalogue networks MetaApi.Search can query, for a
+	// client's torrent / Usenet / both selector. Empty when search is not served.
+	Networks      []MetaNetwork `protobuf:"varint,10,rep,packed,name=networks,proto3,enum=enode.meta.v1.MetaNetwork" json:"networks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -352,6 +360,20 @@ func (x *Caps) GetHttpUrl() string {
 		return x.HttpUrl
 	}
 	return ""
+}
+
+func (x *Caps) GetSearchRequiresAccount() bool {
+	if x != nil {
+		return x.SearchRequiresAccount
+	}
+	return false
+}
+
+func (x *Caps) GetNetworks() []MetaNetwork {
+	if x != nil {
+		return x.Networks
+	}
+	return nil
 }
 
 type GetMetaFileRequest struct {
@@ -915,7 +937,7 @@ var File_enode_meta_v1_api_proto protoreflect.FileDescriptor
 const file_enode_meta_v1_api_proto_rawDesc = "" +
 	"\n" +
 	"\x17enode/meta/v1/api.proto\x12\renode.meta.v1\x1a\x18enode/meta/v1/meta.proto\"\x10\n" +
-	"\x0eGetCapsRequest\"\xd6\x02\n" +
+	"\x0eGetCapsRequest\"\xc6\x03\n" +
 	"\x04Caps\x12)\n" +
 	"\x10contract_version\x18\x01 \x01(\rR\x0fcontractVersion\x12-\n" +
 	"\x05kinds\x18\x02 \x03(\x0e2\x17.enode.meta.v1.MetaKindR\x05kinds\x124\n" +
@@ -925,7 +947,10 @@ const file_enode_meta_v1_api_proto_rawDesc = "" +
 	"accountUrl\x12)\n" +
 	"\x10search_available\x18\x06 \x01(\bR\x0fsearchAvailable\x12,\n" +
 	"\x12max_metafile_bytes\x18\a \x01(\rR\x10maxMetafileBytes\x12\x19\n" +
-	"\bhttp_url\x18\b \x01(\tR\ahttpUrl\"P\n" +
+	"\bhttp_url\x18\b \x01(\tR\ahttpUrl\x126\n" +
+	"\x17search_requires_account\x18\t \x01(\bR\x15searchRequiresAccount\x126\n" +
+	"\bnetworks\x18\n" +
+	" \x03(\x0e2\x1a.enode.meta.v1.MetaNetworkR\bnetworks\"P\n" +
 	"\x12GetMetaFileRequest\x12\x1b\n" +
 	"\tmeta_hash\x18\x01 \x01(\fR\bmetaHash\x12\x1d\n" +
 	"\n" +
@@ -1021,36 +1046,38 @@ var file_enode_meta_v1_api_proto_goTypes = []any{
 	(*LogoutResponse)(nil),       // 12: enode.meta.v1.LogoutResponse
 	(*ErrorInfo)(nil),            // 13: enode.meta.v1.ErrorInfo
 	(MetaKind)(0),                // 14: enode.meta.v1.MetaKind
-	(*SearchRequest)(nil),        // 15: enode.meta.v1.SearchRequest
-	(*MetaFile)(nil),             // 16: enode.meta.v1.MetaFile
-	(*SearchResponse)(nil),       // 17: enode.meta.v1.SearchResponse
+	(MetaNetwork)(0),             // 15: enode.meta.v1.MetaNetwork
+	(*SearchRequest)(nil),        // 16: enode.meta.v1.SearchRequest
+	(*MetaFile)(nil),             // 17: enode.meta.v1.MetaFile
+	(*SearchResponse)(nil),       // 18: enode.meta.v1.SearchResponse
 }
 var file_enode_meta_v1_api_proto_depIdxs = []int32{
 	14, // 0: enode.meta.v1.Caps.kinds:type_name -> enode.meta.v1.MetaKind
 	0,  // 1: enode.meta.v1.Caps.auth_mode:type_name -> enode.meta.v1.AuthMode
-	2,  // 2: enode.meta.v1.PendingStep.kind:type_name -> enode.meta.v1.StepKind
-	0,  // 3: enode.meta.v1.AuthStatus.auth_mode:type_name -> enode.meta.v1.AuthMode
-	1,  // 4: enode.meta.v1.AuthStatus.state:type_name -> enode.meta.v1.AccountState
-	7,  // 5: enode.meta.v1.AuthStatus.pending_steps:type_name -> enode.meta.v1.PendingStep
-	8,  // 6: enode.meta.v1.LoginResponse.status:type_name -> enode.meta.v1.AuthStatus
-	7,  // 7: enode.meta.v1.ErrorInfo.pending_steps:type_name -> enode.meta.v1.PendingStep
-	3,  // 8: enode.meta.v1.MetaApi.GetCaps:input_type -> enode.meta.v1.GetCapsRequest
-	5,  // 9: enode.meta.v1.MetaApi.GetMetaFile:input_type -> enode.meta.v1.GetMetaFileRequest
-	15, // 10: enode.meta.v1.MetaApi.Search:input_type -> enode.meta.v1.SearchRequest
-	6,  // 11: enode.meta.v1.AccountApi.GetAuthStatus:input_type -> enode.meta.v1.GetAuthStatusRequest
-	9,  // 12: enode.meta.v1.AccountApi.Login:input_type -> enode.meta.v1.LoginRequest
-	11, // 13: enode.meta.v1.AccountApi.Logout:input_type -> enode.meta.v1.LogoutRequest
-	4,  // 14: enode.meta.v1.MetaApi.GetCaps:output_type -> enode.meta.v1.Caps
-	16, // 15: enode.meta.v1.MetaApi.GetMetaFile:output_type -> enode.meta.v1.MetaFile
-	17, // 16: enode.meta.v1.MetaApi.Search:output_type -> enode.meta.v1.SearchResponse
-	8,  // 17: enode.meta.v1.AccountApi.GetAuthStatus:output_type -> enode.meta.v1.AuthStatus
-	10, // 18: enode.meta.v1.AccountApi.Login:output_type -> enode.meta.v1.LoginResponse
-	12, // 19: enode.meta.v1.AccountApi.Logout:output_type -> enode.meta.v1.LogoutResponse
-	14, // [14:20] is the sub-list for method output_type
-	8,  // [8:14] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	15, // 2: enode.meta.v1.Caps.networks:type_name -> enode.meta.v1.MetaNetwork
+	2,  // 3: enode.meta.v1.PendingStep.kind:type_name -> enode.meta.v1.StepKind
+	0,  // 4: enode.meta.v1.AuthStatus.auth_mode:type_name -> enode.meta.v1.AuthMode
+	1,  // 5: enode.meta.v1.AuthStatus.state:type_name -> enode.meta.v1.AccountState
+	7,  // 6: enode.meta.v1.AuthStatus.pending_steps:type_name -> enode.meta.v1.PendingStep
+	8,  // 7: enode.meta.v1.LoginResponse.status:type_name -> enode.meta.v1.AuthStatus
+	7,  // 8: enode.meta.v1.ErrorInfo.pending_steps:type_name -> enode.meta.v1.PendingStep
+	3,  // 9: enode.meta.v1.MetaApi.GetCaps:input_type -> enode.meta.v1.GetCapsRequest
+	5,  // 10: enode.meta.v1.MetaApi.GetMetaFile:input_type -> enode.meta.v1.GetMetaFileRequest
+	16, // 11: enode.meta.v1.MetaApi.Search:input_type -> enode.meta.v1.SearchRequest
+	6,  // 12: enode.meta.v1.AccountApi.GetAuthStatus:input_type -> enode.meta.v1.GetAuthStatusRequest
+	9,  // 13: enode.meta.v1.AccountApi.Login:input_type -> enode.meta.v1.LoginRequest
+	11, // 14: enode.meta.v1.AccountApi.Logout:input_type -> enode.meta.v1.LogoutRequest
+	4,  // 15: enode.meta.v1.MetaApi.GetCaps:output_type -> enode.meta.v1.Caps
+	17, // 16: enode.meta.v1.MetaApi.GetMetaFile:output_type -> enode.meta.v1.MetaFile
+	18, // 17: enode.meta.v1.MetaApi.Search:output_type -> enode.meta.v1.SearchResponse
+	8,  // 18: enode.meta.v1.AccountApi.GetAuthStatus:output_type -> enode.meta.v1.AuthStatus
+	10, // 19: enode.meta.v1.AccountApi.Login:output_type -> enode.meta.v1.LoginResponse
+	12, // 20: enode.meta.v1.AccountApi.Logout:output_type -> enode.meta.v1.LogoutResponse
+	15, // [15:21] is the sub-list for method output_type
+	9,  // [9:15] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_enode_meta_v1_api_proto_init() }
