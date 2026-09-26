@@ -1,0 +1,231 @@
+// MetaApi and AccountApi: how an eMuleQt client talks to an eNode-go server
+// about the torrent and Usenet rows it found in an eD2K search.
+//
+// This is the client-facing half of the contract (phase 4 of the
+// specification). MetaIngest runs server → daemon; these services run
+// client → server. They reuse MetaKind, MetaFile and the Search messages rather
+// than define their own, so a client that already speaks meta.proto needs only
+// the messages below.
+//
+// A server discovers nothing here: the client learns the base URL from the
+// ST_META_API tag of OP_SERVERIDENT, then asks GetCaps what the server needs —
+// in particular whether it requires an account.
+syntax = "proto3";
+
+package enode.meta.v1;
+
+import "enode/meta/v1/meta.proto";
+
+option go_package = "github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1";
+
+// MetaApi serves the metafiles behind meta search rows.
+service MetaApi {
+  // GetCaps describes the server. It never requires authentication, since it is
+  // what tells a client whether authentication is required.
+  rpc GetCaps(GetCapsRequest) returns (Caps);
+
+  // GetMetaFile returns the .torrent or .nzb behind a row.
+  //
+  // The server checks the bytes against meta_hash before answering, so a
+  // catalog_id that does not belong to the hash fails rather than returning
+  // someone else's file. A client must still run the same check itself: the
+  // row and the bytes cross two transports.
+  //
+  // Errors: invalid_argument (not a meta hash, or an unknown kind), not_found,
+  // data_loss (the catalogue's bytes do not fold to meta_hash), unavailable
+  // (the owning catalogue is down), unauthenticated / permission_denied (see
+  // ErrorInfo), resource_exhausted (rate limit).
+  rpc GetMetaFile(GetMetaFileRequest) returns (MetaFile);
+
+  // Search queries the catalogues directly, beyond what the eD2K search
+  // blended in. Reserved for phase 7; a server that does not offer it answers
+  // unimplemented and says so in Caps.search_available.
+  rpc Search(SearchRequest) returns (SearchResponse);
+}
+
+// AccountApi reports and changes the caller's login state.
+//
+// Accounts are optional. A server in AUTH_MODE_PUBLIC answers every call here
+// but never requires one. Registration itself happens on the server's website
+// (registration_url), not over this API: it may involve payment or other steps
+// a client cannot and should not drive.
+service AccountApi {
+  // GetAuthStatus never fails for a missing or bad credential; it reports it.
+  // A client calls it to decide whether to show a login form, a "register"
+  // link, or a "continue registration" link.
+  rpc GetAuthStatus(GetAuthStatusRequest) returns (AuthStatus);
+
+  // Login exchanges a username and password for a session token, to be sent as
+  // "Authorization: Bearer <token>" on later calls. It succeeds for an account
+  // that is not active yet, so the client can show that account's open steps;
+  // the calls that need an active account then fail with permission_denied.
+  //
+  // Errors: unauthenticated (wrong username or password), resource_exhausted.
+  rpc Login(LoginRequest) returns (LoginResponse);
+
+  // Logout revokes the bearer token the call carried.
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}
+
+// AuthMode is whether the server requires an account.
+enum AuthMode {
+  AUTH_MODE_UNSPECIFIED = 0;
+
+  // AUTH_MODE_PUBLIC: every call works without credentials.
+  AUTH_MODE_PUBLIC = 1;
+
+  // AUTH_MODE_ACCOUNT_REQUIRED: GetMetaFile and Search need an active account.
+  AUTH_MODE_ACCOUNT_REQUIRED = 2;
+}
+
+// AccountState is where an account stands.
+enum AccountState {
+  ACCOUNT_STATE_UNSPECIFIED = 0;
+
+  // ACCOUNT_STATE_PENDING: registered, but at least one registration step
+  // (AuthStatus.pending_steps) is still open.
+  ACCOUNT_STATE_PENDING = 1;
+
+  ACCOUNT_STATE_ACTIVE = 2;
+
+  // ACCOUNT_STATE_EXPIRED: the paid-for period ran out; pending_steps says how
+  // to renew.
+  ACCOUNT_STATE_EXPIRED = 3;
+
+  // ACCOUNT_STATE_DISABLED: the operator disabled the account.
+  ACCOUNT_STATE_DISABLED = 4;
+}
+
+// StepKind classifies a registration step so a client can pick an icon or a
+// sentence for it. The set of steps is the server operator's choice and grows
+// without a contract change; a client shows an unknown kind as OTHER.
+enum StepKind {
+  STEP_KIND_UNSPECIFIED = 0;
+  STEP_KIND_PAYMENT = 1;
+  STEP_KIND_EMAIL_VERIFICATION = 2;
+  STEP_KIND_APPROVAL = 3;
+  STEP_KIND_OTHER = 4;
+}
+
+message GetCapsRequest {}
+
+message Caps {
+  // contract_version is the major version of enode.meta.v1 served.
+  uint32 contract_version = 1;
+
+  // kinds are the MetaKinds whose metafiles this server can serve.
+  repeated MetaKind kinds = 2;
+
+  AuthMode auth_mode = 3;
+
+  // registration_url is the website page where an account is created. Empty
+  // in AUTH_MODE_PUBLIC.
+  string registration_url = 4;
+
+  // account_url is the website page where a user sees and continues their
+  // account: open steps, renewal. Empty in AUTH_MODE_PUBLIC.
+  string account_url = 5;
+
+  // search_available says whether MetaApi.Search is served.
+  bool search_available = 6;
+
+  // max_metafile_bytes is the largest MetaFile.content this server returns.
+  uint32 max_metafile_bytes = 7;
+
+  // http_url is the base URL of the optional plain-HTTP endpoint, empty when
+  // the operator has not enabled it. It serves the same services over the
+  // Connect protocol (POST {http_url}/enode.meta.v1.MetaApi/GetMetaFile, proto
+  // or JSON) and the raw metafile at GET {http_url}/meta/v1/{hash hex}?id=
+  // {catalog_id}, for a client without a gRPC stack.
+  string http_url = 8;
+}
+
+message GetMetaFileRequest {
+  // meta_hash is the row's 16-byte eD2K hash.
+  bytes meta_hash = 1;
+
+  // catalog_id is the row's FT_META_ID tag, echoed back. The fold cannot be
+  // reversed, so the server needs it to find the release.
+  string catalog_id = 2;
+}
+
+message GetAuthStatusRequest {}
+
+// PendingStep is one registration step the account still has to complete.
+message PendingStep {
+  // id is the operator's name for the step, e.g. "payment". Stable across
+  // calls, not meant for display.
+  string id = 1;
+
+  StepKind kind = 2;
+
+  // title is a short human-readable label in the server's language.
+  string title = 3;
+
+  // url is the website page that continues this step.
+  string url = 4;
+
+  // msg_code is a stable, translatable code such as "step.payment.required".
+  string msg_code = 5;
+}
+
+message AuthStatus {
+  AuthMode auth_mode = 1;
+
+  // logged_in is true when the call carried a valid credential.
+  bool logged_in = 2;
+  string username = 3;
+
+  // state is ACCOUNT_STATE_UNSPECIFIED when not logged in.
+  AccountState state = 4;
+
+  // expires_at_unix is when access ends, in Unix seconds. 0 means no expiry.
+  int64 expires_at_unix = 5;
+
+  string registration_url = 6;
+  string account_url = 7;
+
+  // msg_code summarises the state as a stable, translatable code, such as
+  // "auth.required" or "account.pending". Empty when nothing needs saying.
+  string msg_code = 8;
+
+  // pending_steps are the open steps, in the order they are to be done.
+  repeated PendingStep pending_steps = 9;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+
+  // client names the calling program, e.g. "eMuleQt 0.3.1", for the user's
+  // own session list.
+  string client = 3;
+}
+
+message LoginResponse {
+  string token = 1;
+
+  // token_expires_at_unix is when the token stops working, in Unix seconds.
+  int64 token_expires_at_unix = 2;
+
+  AuthStatus status = 3;
+}
+
+message LogoutRequest {}
+
+message LogoutResponse {}
+
+// ErrorInfo is attached as a detail to unauthenticated, permission_denied and
+// resource_exhausted errors, so a client can point the user somewhere useful
+// instead of showing a bare status code.
+message ErrorInfo {
+  // msg_code is a stable, translatable code such as "auth.required".
+  string msg_code = 1;
+
+  string registration_url = 2;
+  string account_url = 3;
+
+  // pending_steps repeats AuthStatus.pending_steps when the account exists but
+  // is not active.
+  repeated PendingStep pending_steps = 4;
+}

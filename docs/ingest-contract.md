@@ -288,7 +288,12 @@ keyed by the meta hash it minted. The fold is not reversible, so a later
 
 Returns the daemon name, version, contract version, the kinds it produces, the
 feed's `last_seq` and `purged_through_seq`, the published and catalogued counts,
-the indexer name it puts in every row, and whether search is available.
+the number of files the catalogued releases hold (`files`), the indexer name it
+puts in every row, and whether search is available.
+
+`files` counts files, not releases: a multi-file release yields one row per
+selectable file. It is the figure an eD2K server adds to its own file total when
+an operator chooses to count catalogue files in the server status.
 
 `purged_through_seq` is the number a consumer acts on: resume above it, or
 expect a snapshot.

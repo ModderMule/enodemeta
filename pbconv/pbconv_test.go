@@ -165,6 +165,7 @@ func TestDaemonInfoRoundTrip(t *testing.T) {
 		PurgedThroughSeq: 100,
 		Published:        50000,
 		Catalogued:       1200000,
+		Files:            3400000,
 		Indexer:          "dht",
 		SearchAvailable:  true,
 	}

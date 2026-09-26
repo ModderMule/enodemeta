@@ -280,5 +280,7 @@ list still defers is protobuf, not XML.
 
 ## Deferred
 
-- **`api.proto` (MetaApi)** — the client-facing API eNode-go's phase 4 needs. It
-  should reuse `MetaEntry`, `MetaFile` and `Search*` rather than define its own.
+- ~~**`api.proto` (MetaApi)**~~ — built: `proto/enode/meta/v1/api.proto` defines
+  `MetaApi` (`GetCaps`, `GetMetaFile`, `Search`) and `AccountApi` (`GetAuthStatus`,
+  `Login`, `Logout`), reusing `MetaFile`, `MetaKind` and `Search*`. eNode-go serves
+  it; see eNode-go's `docs/meta-api.md`.

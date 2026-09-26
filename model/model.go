@@ -259,6 +259,8 @@ type DaemonInfo struct {
 
 	Published  uint64
 	Catalogued uint64
+	// Files is how many files the catalogued releases hold.
+	Files uint64
 
 	Indexer         string
 	SearchAvailable bool

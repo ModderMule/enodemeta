@@ -145,4 +145,9 @@ message GetInfoResponse {
   // search_available is false when the daemon has no search index configured;
   // Search then reports unimplemented.
   bool search_available = 10;
+
+  // files is how many files the catalogued releases hold. A release yields one
+  // row per selectable file, so this is the figure an eD2K server can add to its
+  // own file total, which counts files rather than releases.
+  uint64 files = 11;
 }

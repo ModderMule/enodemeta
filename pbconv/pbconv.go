@@ -259,6 +259,7 @@ func DaemonInfoToProto(info model.DaemonInfo) *metav1.GetInfoResponse {
 		PurgedThroughSeq: info.PurgedThroughSeq,
 		Published:        info.Published,
 		Catalogued:       info.Catalogued,
+		Files:            info.Files,
 		Indexer:          info.Indexer,
 		SearchAvailable:  info.SearchAvailable,
 	}
@@ -284,6 +285,7 @@ func DaemonInfoFromProto(res *metav1.GetInfoResponse) model.DaemonInfo {
 		PurgedThroughSeq: res.GetPurgedThroughSeq(),
 		Published:        res.GetPublished(),
 		Catalogued:       res.GetCatalogued(),
+		Files:            res.GetFiles(),
 		Indexer:          res.GetIndexer(),
 		SearchAvailable:  res.GetSearchAvailable(),
 	}

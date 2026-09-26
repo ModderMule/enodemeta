@@ -480,8 +480,12 @@ type GetInfoResponse struct {
 	// search_available is false when the daemon has no search index configured;
 	// Search then reports unimplemented.
 	SearchAvailable bool `protobuf:"varint,10,opt,name=search_available,json=searchAvailable,proto3" json:"search_available,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// files is how many files the catalogued releases hold. A release yields one
+	// row per selectable file, so this is the figure an eD2K server can add to its
+	// own file total, which counts files rather than releases.
+	Files         uint64 `protobuf:"varint,11,opt,name=files,proto3" json:"files,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetInfoResponse) Reset() {
@@ -584,6 +588,13 @@ func (x *GetInfoResponse) GetSearchAvailable() bool {
 	return false
 }
 
+func (x *GetInfoResponse) GetFiles() uint64 {
+	if x != nil {
+		return x.Files
+	}
+	return 0
+}
+
 var File_enode_meta_v1_ingest_proto protoreflect.FileDescriptor
 
 const file_enode_meta_v1_ingest_proto_rawDesc = "" +
@@ -612,7 +623,7 @@ const file_enode_meta_v1_ingest_proto_rawDesc = "" +
 	"\n" +
 	"catalog_id\x18\x01 \x01(\tR\tcatalogId\x12\x1a\n" +
 	"\bidentity\x18\x02 \x01(\fR\bidentity\"\x10\n" +
-	"\x0eGetInfoRequest\"\xe9\x02\n" +
+	"\x0eGetInfoRequest\"\xff\x02\n" +
 	"\x0fGetInfoResponse\x12\x16\n" +
 	"\x06daemon\x18\x01 \x01(\tR\x06daemon\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12)\n" +
@@ -626,7 +637,8 @@ const file_enode_meta_v1_ingest_proto_rawDesc = "" +
 	"catalogued\x12\x18\n" +
 	"\aindexer\x18\t \x01(\tR\aindexer\x12)\n" +
 	"\x10search_available\x18\n" +
-	" \x01(\bR\x0fsearchAvailable*R\n" +
+	" \x01(\bR\x0fsearchAvailable\x12\x14\n" +
+	"\x05files\x18\v \x01(\x04R\x05files*R\n" +
 	"\bChangeOp\x12\x19\n" +
 	"\x15CHANGE_OP_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10CHANGE_OP_UPSERT\x10\x01\x12\x15\n" +
