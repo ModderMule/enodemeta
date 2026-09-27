@@ -79,6 +79,46 @@ func Extension(name string) string {
 	return strings.ToLower(name[dot+1:])
 }
 
+// Weighted is one file of a release, as Dominant weighs it.
+type Weighted struct {
+	Name string
+	Size uint64
+}
+
+// Dominant returns the type holding most of a release's bytes, or "" when none
+// of its files is typed.
+//
+// It is the type of a release's whole-set row, whose name is a directory or a
+// posting's subject and almost never ends in a real extension. Bytes rather than
+// a file count, so a season of .mkv outweighs its .srt tracks and a single .iso
+// outweighs the readme next to it. Untyped files — .nfo, .par2, .sfv and unknown
+// extensions — carry no weight. A tie goes to the type seen first, so the
+// caller's order (largest first, or document order) decides it.
+func Dominant(files []Weighted) string {
+	var order []string
+	bytes := map[string]uint64{}
+
+	for _, file := range files {
+		t := FromName(file.Name)
+		if t == "" {
+			continue
+		}
+		if _, seen := bytes[t]; !seen {
+			order = append(order, t)
+		}
+		bytes[t] += file.Size
+	}
+
+	best := ""
+	for _, t := range order {
+		if best == "" || bytes[t] > bytes[best] {
+			best = t
+		}
+	}
+
+	return best
+}
+
 // -- internals ---------------------------------------------------------------
 
 // neverTyped are the extensions that deliberately get no type at all.

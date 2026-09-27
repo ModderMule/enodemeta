@@ -85,3 +85,62 @@ func TestDotfileIsNotAnExtension(t *testing.T) {
 	}
 	t.Logf("output: none of them has an extension")
 }
+
+func TestDominant(t *testing.T) {
+	const mb = 1 << 20
+
+	cases := []struct {
+		label string
+		files []Weighted
+		want  string
+	}{
+		{"a video pack with subtitles and a release note", []Weighted{
+			{"Show.S01/Show.S01E01.mkv", 1200 * mb},
+			{"Show.S01/Show.S01E02.mkv", 1100 * mb},
+			{"Show.S01/Show.S01E01.srt", 1 * mb},
+			{"Show.S01/Show.S01E02.srt", 1 * mb},
+			{"Show.S01/Show.S01.nfo", 1 * mb},
+		}, Video},
+		{"an album with its cover art", []Weighted{
+			{"01 - Intro.flac", 30 * mb},
+			{"02 - Song.flac", 40 * mb},
+			{"cover.jpg", 5 * mb},
+		}, Audio},
+		{"a disc image with a readme", []Weighted{
+			{"readme.txt", 1 * mb},
+			{"distro.iso", 4000 * mb},
+		}, CDImage},
+		{"bytes beat file count", []Weighted{
+			{"a.srt", 1 * mb}, {"b.srt", 1 * mb}, {"c.srt", 1 * mb},
+			{"movie.mp4", 700 * mb},
+		}, Video},
+		{"a rar posting is an archive", []Weighted{
+			{"release.part01.rar", 500 * mb},
+			{"release.part02.rar", 500 * mb},
+			{"release.vol00+01.par2", 50 * mb},
+		}, Archive},
+		{"nothing typed", []Weighted{
+			{"release.nfo", 1 * mb},
+			{"release.par2", 1 * mb},
+			{"data.qqq", 900 * mb},
+		}, ""},
+		{"a tie goes to the type seen first", []Weighted{
+			{"clip.mp4", 100 * mb},
+			{"song.mp3", 100 * mb},
+		}, Video},
+		{"no files", nil, ""},
+	}
+
+	for _, c := range cases {
+		t.Run(c.label, func(t *testing.T) {
+			t.Logf("input:  %+v", c.files)
+
+			got := Dominant(c.files)
+			t.Logf("output: %q", got)
+
+			if got != c.want {
+				t.Errorf("got %q, want %q", got, c.want)
+			}
+		})
+	}
+}

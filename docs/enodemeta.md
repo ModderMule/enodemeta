@@ -31,7 +31,7 @@ Its only dependencies are `google.golang.org/protobuf` and
 | `torrentmeta/` | Torrent identity: v1, v2 and hybrid parsing, file trees, padding |
 | `nzbmeta/` | NZB identity: parsing, the canonical digest, a deterministic writer, subjects, PAR2, shortfall |
 | `magnet/` | Magnet construction, including BEP 53 `so=` |
-| `filetype/` | Extension to eD2K file-type string |
+| `filetype/` | Extension to eD2K file-type string; `Dominant` types a whole-set row by the type holding most of the release's bytes |
 | `verify.go` | `VerifyMetaFile`: recompute the identity and check it against a hash |
 | `testdata/` | The vectors a C++ port is checked against |
 
