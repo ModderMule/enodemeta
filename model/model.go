@@ -231,6 +231,104 @@ type SearchQuery struct {
 	// several rows.
 	Limit  uint32
 	Offset uint32
+
+	// Sort orders the results; Ascending reverses an attribute sort. A daemon
+	// whose network lacks the sort's key answers in relevance order.
+	Sort      SearchSort
+	Ascending bool
+
+	// Usenet only. MinCompletion is in hundredths of a percent.
+	Categories        []uint16
+	Groups            []string
+	MinCompletion     uint16
+	MinGrabs          uint32
+	IndexedWithinDays uint32
+
+	// Torrent only.
+	Alive          bool
+	MinLeechers    uint32
+	MinPopularity  uint64
+	SeenWithinDays uint32
+
+	// Both. Zero is no bound.
+	MinFiles uint32
+	MaxFiles uint32
+}
+
+// SearchSort is a result order. The values are the wire enum's, so converting
+// is a cast.
+type SearchSort uint8
+
+// The orders a search can ask for.
+const (
+	SortUnspecified SearchSort = iota
+	SortRelevance
+	SortBest
+	SortDate
+	SortSize
+	SortFiles
+	SortSeeders
+	SortLeechers
+	SortPopularity
+	SortLastSeen
+	SortGrabs
+	SortCompletion
+	SortIndexed
+
+	sortCount
+)
+
+// sortNames are the stable spellings a web form or a CLI flag uses.
+var sortNames = [sortCount]string{
+	SortUnspecified: "",
+	SortRelevance:   "relevance",
+	SortBest:        "best",
+	SortDate:        "date",
+	SortSize:        "size",
+	SortFiles:       "files",
+	SortSeeders:     "seeders",
+	SortLeechers:    "leechers",
+	SortPopularity:  "popularity",
+	SortLastSeen:    "seen",
+	SortGrabs:       "grabs",
+	SortCompletion:  "completion",
+	SortIndexed:     "indexed",
+}
+
+// String is the sort's stable name, "" for SortUnspecified.
+func (s SearchSort) String() string {
+	if s >= sortCount {
+		return ""
+	}
+
+	return sortNames[s]
+}
+
+// Valid reports whether s is a known sort.
+func (s SearchSort) Valid() bool {
+	return s < sortCount
+}
+
+// Ranked reports whether the sort is a relevance order, which has no direction.
+func (s SearchSort) Ranked() bool {
+	return s == SortUnspecified || s == SortRelevance || s == SortBest
+}
+
+// ParseSort reads a sort by its stable name, ignoring case. An unknown name is
+// SortUnspecified and false.
+func ParseSort(name string) (SearchSort, bool) {
+	name = strings.ToLower(strings.TrimSpace(name))
+	if name == "" {
+		return SortUnspecified, true
+	}
+
+	for s, n := range sortNames {
+		if n == name {
+			return SearchSort(s), true
+		}
+	}
+
+	return SortUnspecified, false
 }
 
 // SearchResult is what a search returned.

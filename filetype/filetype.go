@@ -119,6 +119,31 @@ func Dominant(files []Weighted) string {
 	return best
 }
 
+// All returns every type string, in eMule's search-panel order. It is a fresh
+// slice each call, so a caller building a menu from it can sort or trim it.
+func All() []string {
+	return []string{Audio, Video, Image, Document, Program, Archive, CDImage, Collection}
+}
+
+// Label is a type's name as a person reads it — "Doc" is "Document" — or the
+// string itself for one this package does not define.
+func Label(name string) string {
+	switch name {
+	case Document:
+		return "Document"
+	case Program:
+		return "Program"
+	case Archive:
+		return "Archive"
+	case CDImage:
+		return "CD image"
+	case Collection:
+		return "Collection"
+	default:
+		return name
+	}
+}
+
 // -- internals ---------------------------------------------------------------
 
 // neverTyped are the extensions that deliberately get no type at all.

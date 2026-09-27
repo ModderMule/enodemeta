@@ -139,6 +139,90 @@ func (MetaNetwork) EnumDescriptor() ([]byte, []int) {
 	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{1}
 }
 
+// SearchSort is a result order.
+//
+// Only DATE, SIZE and SEEDERS read a key every network's MetaEntry carries, so
+// only those merge into one order across networks; a search over several
+// networks sorted by anything else interleaves them.
+type SearchSort int32
+
+const (
+	SearchSort_SEARCH_SORT_UNSPECIFIED SearchSort = 0 // relevance
+	SearchSort_SEARCH_SORT_RELEVANCE   SearchSort = 1 // full-text weight, name above file paths
+	SearchSort_SEARCH_SORT_BEST        SearchSort = 2 // relevance plus a demand bonus (seeders, grabs)
+	SearchSort_SEARCH_SORT_DATE        SearchSort = 3 // posted (Usenet) or first seen (torrent)
+	SearchSort_SEARCH_SORT_SIZE        SearchSort = 4
+	SearchSort_SEARCH_SORT_FILES       SearchSort = 5
+	SearchSort_SEARCH_SORT_SEEDERS     SearchSort = 6  // torrent
+	SearchSort_SEARCH_SORT_LEECHERS    SearchSort = 7  // torrent
+	SearchSort_SEARCH_SORT_POPULARITY  SearchSort = 8  // torrent
+	SearchSort_SEARCH_SORT_LAST_SEEN   SearchSort = 9  // torrent
+	SearchSort_SEARCH_SORT_GRABS       SearchSort = 10 // Usenet
+	SearchSort_SEARCH_SORT_COMPLETION  SearchSort = 11 // Usenet
+	SearchSort_SEARCH_SORT_INDEXED     SearchSort = 12 // Usenet: when the release was catalogued
+)
+
+// Enum value maps for SearchSort.
+var (
+	SearchSort_name = map[int32]string{
+		0:  "SEARCH_SORT_UNSPECIFIED",
+		1:  "SEARCH_SORT_RELEVANCE",
+		2:  "SEARCH_SORT_BEST",
+		3:  "SEARCH_SORT_DATE",
+		4:  "SEARCH_SORT_SIZE",
+		5:  "SEARCH_SORT_FILES",
+		6:  "SEARCH_SORT_SEEDERS",
+		7:  "SEARCH_SORT_LEECHERS",
+		8:  "SEARCH_SORT_POPULARITY",
+		9:  "SEARCH_SORT_LAST_SEEN",
+		10: "SEARCH_SORT_GRABS",
+		11: "SEARCH_SORT_COMPLETION",
+		12: "SEARCH_SORT_INDEXED",
+	}
+	SearchSort_value = map[string]int32{
+		"SEARCH_SORT_UNSPECIFIED": 0,
+		"SEARCH_SORT_RELEVANCE":   1,
+		"SEARCH_SORT_BEST":        2,
+		"SEARCH_SORT_DATE":        3,
+		"SEARCH_SORT_SIZE":        4,
+		"SEARCH_SORT_FILES":       5,
+		"SEARCH_SORT_SEEDERS":     6,
+		"SEARCH_SORT_LEECHERS":    7,
+		"SEARCH_SORT_POPULARITY":  8,
+		"SEARCH_SORT_LAST_SEEN":   9,
+		"SEARCH_SORT_GRABS":       10,
+		"SEARCH_SORT_COMPLETION":  11,
+		"SEARCH_SORT_INDEXED":     12,
+	}
+)
+
+func (x SearchSort) Enum() *SearchSort {
+	p := new(SearchSort)
+	*p = x
+	return p
+}
+
+func (x SearchSort) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SearchSort) Descriptor() protoreflect.EnumDescriptor {
+	return file_enode_meta_v1_meta_proto_enumTypes[2].Descriptor()
+}
+
+func (SearchSort) Type() protoreflect.EnumType {
+	return &file_enode_meta_v1_meta_proto_enumTypes[2]
+}
+
+func (x SearchSort) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SearchSort.Descriptor instead.
+func (SearchSort) EnumDescriptor() ([]byte, []int) {
+	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{2}
+}
+
 // MetaEntry is one advertised row: a release, or one file inside it.
 //
 // Fields 1 to 16 are the specification's §6.5 layout, unchanged. Fields 17 and
@@ -452,9 +536,42 @@ type SearchRequest struct {
 	// network limits MetaApi.Search to one network; UNSPECIFIED searches all of
 	// them. A daemon serves a single network and ignores it. kinds still applies
 	// on top, to the rows of the networks searched.
-	Network       MetaNetwork `protobuf:"varint,11,opt,name=network,proto3,enum=enode.meta.v1.MetaNetwork" json:"network,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Network MetaNetwork `protobuf:"varint,11,opt,name=network,proto3,enum=enode.meta.v1.MetaNetwork" json:"network,omitempty"`
+	// sort orders the results. UNSPECIFIED is relevance. A sort the network does
+	// not have falls back to relevance.
+	Sort SearchSort `protobuf:"varint,12,opt,name=sort,proto3,enum=enode.meta.v1.SearchSort" json:"sort,omitempty"`
+	// sort_ascending reverses sort. It is ignored for RELEVANCE and BEST, which
+	// are only ever best-first.
+	SortAscending bool `protobuf:"varint,13,opt,name=sort_ascending,json=sortAscending,proto3" json:"sort_ascending,omitempty"`
+	// categories keeps a Usenet release filed under any of these newznab
+	// categories. A root (5000) matches every leaf under it (5040).
+	Categories []uint32 `protobuf:"varint,14,rep,packed,name=categories,proto3" json:"categories,omitempty"`
+	// groups keeps a Usenet release crawled from any of these newsgroups, by
+	// name. A name the daemon does not crawl narrows the search to nothing.
+	Groups []string `protobuf:"bytes,15,rep,name=groups,proto3" json:"groups,omitempty"`
+	// min_completion is a Usenet floor in hundredths of a percent: 9990 is 99.9%.
+	MinCompletion uint32 `protobuf:"varint,16,opt,name=min_completion,json=minCompletion,proto3" json:"min_completion,omitempty"`
+	// alive keeps a torrent whose last scrape found at least one seeder or
+	// leecher. A torrent nobody has scraped has neither and is dropped.
+	Alive bool `protobuf:"varint,17,opt,name=alive,proto3" json:"alive,omitempty"`
+	// min_leechers and min_popularity are torrent floors. Popularity is the
+	// daemon's own demand counter and is comparable within one daemon only.
+	MinLeechers   uint32 `protobuf:"varint,18,opt,name=min_leechers,json=minLeechers,proto3" json:"min_leechers,omitempty"`
+	MinPopularity uint64 `protobuf:"varint,19,opt,name=min_popularity,json=minPopularity,proto3" json:"min_popularity,omitempty"`
+	// min_grabs is a Usenet floor on how often a release was downloaded.
+	MinGrabs uint32 `protobuf:"varint,20,opt,name=min_grabs,json=minGrabs,proto3" json:"min_grabs,omitempty"`
+	// min_files and max_files bound a release's file count. max_files = 1 asks
+	// for single-file releases only.
+	MinFiles uint32 `protobuf:"varint,21,opt,name=min_files,json=minFiles,proto3" json:"min_files,omitempty"`
+	MaxFiles uint32 `protobuf:"varint,22,opt,name=max_files,json=maxFiles,proto3" json:"max_files,omitempty"`
+	// seen_within_days keeps a torrent some peer asked for in the last so many
+	// days — a better "still alive" than a scrape estimate for rare releases.
+	SeenWithinDays uint32 `protobuf:"varint,23,opt,name=seen_within_days,json=seenWithinDays,proto3" json:"seen_within_days,omitempty"`
+	// indexed_within_days keeps a Usenet release catalogued in the last so many
+	// days, whenever it was posted. max_age_days is the posting date.
+	IndexedWithinDays uint32 `protobuf:"varint,24,opt,name=indexed_within_days,json=indexedWithinDays,proto3" json:"indexed_within_days,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *SearchRequest) Reset() {
@@ -562,6 +679,97 @@ func (x *SearchRequest) GetNetwork() MetaNetwork {
 		return x.Network
 	}
 	return MetaNetwork_META_NETWORK_UNSPECIFIED
+}
+
+func (x *SearchRequest) GetSort() SearchSort {
+	if x != nil {
+		return x.Sort
+	}
+	return SearchSort_SEARCH_SORT_UNSPECIFIED
+}
+
+func (x *SearchRequest) GetSortAscending() bool {
+	if x != nil {
+		return x.SortAscending
+	}
+	return false
+}
+
+func (x *SearchRequest) GetCategories() []uint32 {
+	if x != nil {
+		return x.Categories
+	}
+	return nil
+}
+
+func (x *SearchRequest) GetGroups() []string {
+	if x != nil {
+		return x.Groups
+	}
+	return nil
+}
+
+func (x *SearchRequest) GetMinCompletion() uint32 {
+	if x != nil {
+		return x.MinCompletion
+	}
+	return 0
+}
+
+func (x *SearchRequest) GetAlive() bool {
+	if x != nil {
+		return x.Alive
+	}
+	return false
+}
+
+func (x *SearchRequest) GetMinLeechers() uint32 {
+	if x != nil {
+		return x.MinLeechers
+	}
+	return 0
+}
+
+func (x *SearchRequest) GetMinPopularity() uint64 {
+	if x != nil {
+		return x.MinPopularity
+	}
+	return 0
+}
+
+func (x *SearchRequest) GetMinGrabs() uint32 {
+	if x != nil {
+		return x.MinGrabs
+	}
+	return 0
+}
+
+func (x *SearchRequest) GetMinFiles() uint32 {
+	if x != nil {
+		return x.MinFiles
+	}
+	return 0
+}
+
+func (x *SearchRequest) GetMaxFiles() uint32 {
+	if x != nil {
+		return x.MaxFiles
+	}
+	return 0
+}
+
+func (x *SearchRequest) GetSeenWithinDays() uint32 {
+	if x != nil {
+		return x.SeenWithinDays
+	}
+	return 0
+}
+
+func (x *SearchRequest) GetIndexedWithinDays() uint32 {
+	if x != nil {
+		return x.IndexedWithinDays
+	}
+	return 0
 }
 
 type SearchResponse struct {
@@ -682,7 +890,7 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\bMetaFile\x12+\n" +
 	"\x04kind\x18\x01 \x01(\x0e2\x17.enode.meta.v1.MetaKindR\x04kind\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\fR\acontent\x12!\n" +
-	"\fcontent_type\x18\x03 \x01(\tR\vcontentType\"\xdf\x02\n" +
+	"\fcontent_type\x18\x03 \x01(\tR\vcontentType\"\xa5\x06\n" +
 	"\rSearchRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x18\n" +
 	"\aexclude\x18\x02 \x03(\tR\aexclude\x12-\n" +
@@ -697,7 +905,22 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\x05limit\x18\t \x01(\rR\x05limit\x12\x16\n" +
 	"\x06offset\x18\n" +
 	" \x01(\rR\x06offset\x124\n" +
-	"\anetwork\x18\v \x01(\x0e2\x1a.enode.meta.v1.MetaNetworkR\anetwork\"\xb4\x01\n" +
+	"\anetwork\x18\v \x01(\x0e2\x1a.enode.meta.v1.MetaNetworkR\anetwork\x12-\n" +
+	"\x04sort\x18\f \x01(\x0e2\x19.enode.meta.v1.SearchSortR\x04sort\x12%\n" +
+	"\x0esort_ascending\x18\r \x01(\bR\rsortAscending\x12\x1e\n" +
+	"\n" +
+	"categories\x18\x0e \x03(\rR\n" +
+	"categories\x12\x16\n" +
+	"\x06groups\x18\x0f \x03(\tR\x06groups\x12%\n" +
+	"\x0emin_completion\x18\x10 \x01(\rR\rminCompletion\x12\x14\n" +
+	"\x05alive\x18\x11 \x01(\bR\x05alive\x12!\n" +
+	"\fmin_leechers\x18\x12 \x01(\rR\vminLeechers\x12%\n" +
+	"\x0emin_popularity\x18\x13 \x01(\x04R\rminPopularity\x12\x1b\n" +
+	"\tmin_grabs\x18\x14 \x01(\rR\bminGrabs\x12\x1b\n" +
+	"\tmin_files\x18\x15 \x01(\rR\bminFiles\x12\x1b\n" +
+	"\tmax_files\x18\x16 \x01(\rR\bmaxFiles\x12(\n" +
+	"\x10seen_within_days\x18\x17 \x01(\rR\x0eseenWithinDays\x12.\n" +
+	"\x13indexed_within_days\x18\x18 \x01(\rR\x11indexedWithinDays\"\xb4\x01\n" +
 	"\x0eSearchResponse\x122\n" +
 	"\aentries\x18\x01 \x03(\v2\x18.enode.meta.v1.MetaEntryR\aentries\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x04R\x05total\x12\x1f\n" +
@@ -714,7 +937,23 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\vMetaNetwork\x12\x1c\n" +
 	"\x18META_NETWORK_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14META_NETWORK_TORRENT\x10\x01\x12\x17\n" +
-	"\x13META_NETWORK_USENET\x10\x02B:Z8github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
+	"\x13META_NETWORK_USENET\x10\x02*\xd3\x02\n" +
+	"\n" +
+	"SearchSort\x12\x1b\n" +
+	"\x17SEARCH_SORT_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15SEARCH_SORT_RELEVANCE\x10\x01\x12\x14\n" +
+	"\x10SEARCH_SORT_BEST\x10\x02\x12\x14\n" +
+	"\x10SEARCH_SORT_DATE\x10\x03\x12\x14\n" +
+	"\x10SEARCH_SORT_SIZE\x10\x04\x12\x15\n" +
+	"\x11SEARCH_SORT_FILES\x10\x05\x12\x17\n" +
+	"\x13SEARCH_SORT_SEEDERS\x10\x06\x12\x18\n" +
+	"\x14SEARCH_SORT_LEECHERS\x10\a\x12\x1a\n" +
+	"\x16SEARCH_SORT_POPULARITY\x10\b\x12\x19\n" +
+	"\x15SEARCH_SORT_LAST_SEEN\x10\t\x12\x15\n" +
+	"\x11SEARCH_SORT_GRABS\x10\n" +
+	"\x12\x1a\n" +
+	"\x16SEARCH_SORT_COMPLETION\x10\v\x12\x17\n" +
+	"\x13SEARCH_SORT_INDEXED\x10\fB:Z8github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
 
 var (
 	file_enode_meta_v1_meta_proto_rawDescOnce sync.Once
@@ -728,27 +967,29 @@ func file_enode_meta_v1_meta_proto_rawDescGZIP() []byte {
 	return file_enode_meta_v1_meta_proto_rawDescData
 }
 
-var file_enode_meta_v1_meta_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_enode_meta_v1_meta_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_enode_meta_v1_meta_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_enode_meta_v1_meta_proto_goTypes = []any{
 	(MetaKind)(0),          // 0: enode.meta.v1.MetaKind
 	(MetaNetwork)(0),       // 1: enode.meta.v1.MetaNetwork
-	(*MetaEntry)(nil),      // 2: enode.meta.v1.MetaEntry
-	(*MetaFile)(nil),       // 3: enode.meta.v1.MetaFile
-	(*SearchRequest)(nil),  // 4: enode.meta.v1.SearchRequest
-	(*SearchResponse)(nil), // 5: enode.meta.v1.SearchResponse
+	(SearchSort)(0),        // 2: enode.meta.v1.SearchSort
+	(*MetaEntry)(nil),      // 3: enode.meta.v1.MetaEntry
+	(*MetaFile)(nil),       // 4: enode.meta.v1.MetaFile
+	(*SearchRequest)(nil),  // 5: enode.meta.v1.SearchRequest
+	(*SearchResponse)(nil), // 6: enode.meta.v1.SearchResponse
 }
 var file_enode_meta_v1_meta_proto_depIdxs = []int32{
 	0, // 0: enode.meta.v1.MetaEntry.kind:type_name -> enode.meta.v1.MetaKind
 	0, // 1: enode.meta.v1.MetaFile.kind:type_name -> enode.meta.v1.MetaKind
 	0, // 2: enode.meta.v1.SearchRequest.kinds:type_name -> enode.meta.v1.MetaKind
 	1, // 3: enode.meta.v1.SearchRequest.network:type_name -> enode.meta.v1.MetaNetwork
-	2, // 4: enode.meta.v1.SearchResponse.entries:type_name -> enode.meta.v1.MetaEntry
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	2, // 4: enode.meta.v1.SearchRequest.sort:type_name -> enode.meta.v1.SearchSort
+	3, // 5: enode.meta.v1.SearchResponse.entries:type_name -> enode.meta.v1.MetaEntry
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_enode_meta_v1_meta_proto_init() }
@@ -761,7 +1002,7 @@ func file_enode_meta_v1_meta_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_enode_meta_v1_meta_proto_rawDesc), len(file_enode_meta_v1_meta_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,

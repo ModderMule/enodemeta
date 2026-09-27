@@ -423,3 +423,18 @@ additions below are about meaning rather than about wire format.
     from an older peer. The daemons read exactness from Manticore's
     `total_relation`, returned by the same `SHOW META` as `total_found`, so it
     costs no extra query.
+
+14. **`SearchRequest` gained a sort (12, 13) and network-specific filters
+    (14–24)**, all additive. Each one is answered from an attribute the daemon's
+    Manticore index already holds, so none costs more than a comparison per
+    matching release. The rule is amendment 10's, generalised: **a daemon
+    ignores a filter or sort its network does not have** — a Usenet daemon drops
+    `alive`, `min_leechers`, `min_popularity`, `seen_within_days` and the
+    torrent sorts; a torrent daemon drops `categories`, `groups`,
+    `min_completion`, `min_grabs`, `indexed_within_days` and the Usenet sorts —
+    and answers an unknown or foreign sort in relevance order. `sort_ascending`
+    only applies to attribute sorts. Across networks, only `DATE`, `SIZE` and
+    `SEEDERS` merge into one order, because only their keys are on every
+    `MetaEntry` (`age_days`, `total_size`, `seeders`); a multi-network search
+    sorted any other way interleaves the networks, as before. The chosen and
+    rejected filters are listed in usenet-crawler's `docs/search-filters.md`.

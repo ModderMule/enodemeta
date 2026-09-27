@@ -6,6 +6,8 @@ import (
 
 	"github.com/ModderMule/enodemeta/metahash"
 	"github.com/ModderMule/enodemeta/model"
+
+	metav1 "github.com/ModderMule/enodemeta/gen/enode/meta/v1"
 )
 
 // TestEntryRoundTripLosesNothing is the test the specification asks for in §11:
@@ -131,6 +133,20 @@ func TestSearchRoundTrip(t *testing.T) {
 		Type:       "Iso",
 		Limit:      50,
 		Offset:     150,
+
+		Sort:              model.SortSeeders,
+		Ascending:         true,
+		Categories:        []uint16{5000, 5040},
+		Groups:            []string{"alt.binaries.teevee"},
+		MinCompletion:     9990,
+		MinGrabs:          2,
+		IndexedWithinDays: 7,
+		Alive:             true,
+		MinLeechers:       4,
+		MinPopularity:     1000,
+		SeenWithinDays:    30,
+		MinFiles:          1,
+		MaxFiles:          1,
 	}
 	t.Logf("input:  %+v", query)
 
@@ -154,6 +170,31 @@ func TestSearchRoundTrip(t *testing.T) {
 
 	if !reflect.DeepEqual(result, got) {
 		t.Errorf("a result lost something:\n in: %+v\nout: %+v", result, got)
+	}
+}
+
+func TestSearchQueryFromProtoGuardsNarrowing(t *testing.T) {
+	// A newer peer's sort, a category too wide for newznab and a completion
+	// floor past 100% must not wrap into something that exists.
+	req := &metav1.SearchRequest{
+		Query:         "x",
+		Sort:          metav1.SearchSort(99),
+		Categories:    []uint32{5040, 70000},
+		MinCompletion: 20000,
+	}
+	t.Logf("input:  sort=%d categories=%v min_completion=%d", req.GetSort(), req.GetCategories(), req.GetMinCompletion())
+
+	got := SearchQueryFromProto(req)
+	t.Logf("output: sort=%q categories=%v min_completion=%d", got.Sort, got.Categories, got.MinCompletion)
+
+	if got.Sort != model.SortUnspecified {
+		t.Errorf("an unknown sort must read as unspecified, got %d", got.Sort)
+	}
+	if !reflect.DeepEqual(got.Categories, []uint16{5040}) {
+		t.Errorf("an out-of-range category must be dropped, got %v", got.Categories)
+	}
+	if got.MinCompletion != 10000 {
+		t.Errorf("completion must clamp at 100%%, got %d", got.MinCompletion)
 	}
 }
 

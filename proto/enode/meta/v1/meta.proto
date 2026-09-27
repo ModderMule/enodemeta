@@ -155,6 +155,78 @@ message SearchRequest {
   // them. A daemon serves a single network and ignores it. kinds still applies
   // on top, to the rows of the networks searched.
   MetaNetwork network = 11;
+
+  // Fields 12 onwards are filters and orders a daemon answers from the
+  // attributes its index already holds, so none of them costs more than a
+  // comparison per matching release. A filter or sort that does not exist on a
+  // network is ignored by that network's daemon, the way a Usenet daemon drops
+  // min_seeders: refusing the whole search over it would make a mixed-network
+  // client choose between asking and getting answers.
+
+  // sort orders the results. UNSPECIFIED is relevance. A sort the network does
+  // not have falls back to relevance.
+  SearchSort sort = 12;
+
+  // sort_ascending reverses sort. It is ignored for RELEVANCE and BEST, which
+  // are only ever best-first.
+  bool sort_ascending = 13;
+
+  // categories keeps a Usenet release filed under any of these newznab
+  // categories. A root (5000) matches every leaf under it (5040).
+  repeated uint32 categories = 14;
+
+  // groups keeps a Usenet release crawled from any of these newsgroups, by
+  // name. A name the daemon does not crawl narrows the search to nothing.
+  repeated string groups = 15;
+
+  // min_completion is a Usenet floor in hundredths of a percent: 9990 is 99.9%.
+  uint32 min_completion = 16;
+
+  // alive keeps a torrent whose last scrape found at least one seeder or
+  // leecher. A torrent nobody has scraped has neither and is dropped.
+  bool alive = 17;
+
+  // min_leechers and min_popularity are torrent floors. Popularity is the
+  // daemon's own demand counter and is comparable within one daemon only.
+  uint32 min_leechers = 18;
+  uint64 min_popularity = 19;
+
+  // min_grabs is a Usenet floor on how often a release was downloaded.
+  uint32 min_grabs = 20;
+
+  // min_files and max_files bound a release's file count. max_files = 1 asks
+  // for single-file releases only.
+  uint32 min_files = 21;
+  uint32 max_files = 22;
+
+  // seen_within_days keeps a torrent some peer asked for in the last so many
+  // days — a better "still alive" than a scrape estimate for rare releases.
+  uint32 seen_within_days = 23;
+
+  // indexed_within_days keeps a Usenet release catalogued in the last so many
+  // days, whenever it was posted. max_age_days is the posting date.
+  uint32 indexed_within_days = 24;
+}
+
+// SearchSort is a result order.
+//
+// Only DATE, SIZE and SEEDERS read a key every network's MetaEntry carries, so
+// only those merge into one order across networks; a search over several
+// networks sorted by anything else interleaves them.
+enum SearchSort {
+  SEARCH_SORT_UNSPECIFIED = 0;  // relevance
+  SEARCH_SORT_RELEVANCE = 1;    // full-text weight, name above file paths
+  SEARCH_SORT_BEST = 2;         // relevance plus a demand bonus (seeders, grabs)
+  SEARCH_SORT_DATE = 3;         // posted (Usenet) or first seen (torrent)
+  SEARCH_SORT_SIZE = 4;
+  SEARCH_SORT_FILES = 5;
+  SEARCH_SORT_SEEDERS = 6;      // torrent
+  SEARCH_SORT_LEECHERS = 7;     // torrent
+  SEARCH_SORT_POPULARITY = 8;   // torrent
+  SEARCH_SORT_LAST_SEEN = 9;    // torrent
+  SEARCH_SORT_GRABS = 10;       // Usenet
+  SEARCH_SORT_COMPLETION = 11;  // Usenet
+  SEARCH_SORT_INDEXED = 12;     // Usenet: when the release was catalogued
 }
 
 message SearchResponse {

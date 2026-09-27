@@ -8,6 +8,8 @@
 package pbconv
 
 import (
+	"math"
+
 	"github.com/ModderMule/enodemeta/metahash"
 	"github.com/ModderMule/enodemeta/model"
 
@@ -188,6 +190,20 @@ func SearchQueryToProto(q model.SearchQuery) *metav1.SearchRequest {
 		Type:       q.Type,
 		Limit:      q.Limit,
 		Offset:     q.Offset,
+
+		Sort:              metav1.SearchSort(q.Sort),
+		SortAscending:     q.Ascending,
+		Categories:        categoriesToProto(q.Categories),
+		Groups:            cloneStrings(q.Groups),
+		MinCompletion:     uint32(q.MinCompletion),
+		MinGrabs:          q.MinGrabs,
+		IndexedWithinDays: q.IndexedWithinDays,
+		Alive:             q.Alive,
+		MinLeechers:       q.MinLeechers,
+		MinPopularity:     q.MinPopularity,
+		SeenWithinDays:    q.SeenWithinDays,
+		MinFiles:          q.MinFiles,
+		MaxFiles:          q.MaxFiles,
 	}
 }
 
@@ -202,14 +218,16 @@ func SearchQueryFromProto(r *metav1.SearchRequest) model.SearchQuery {
 		kinds = append(kinds, KindFromProto(k))
 	}
 
-	var exclude []string
-	if r.GetExclude() != nil {
-		exclude = append([]string(nil), r.GetExclude()...)
+	// A sort from a newer peer that this build does not know is relevance,
+	// which is what the contract says a daemon answers for a sort it lacks.
+	sort := model.SearchSort(r.GetSort())
+	if r.GetSort() < 0 || !sort.Valid() {
+		sort = model.SortUnspecified
 	}
 
 	return model.SearchQuery{
 		Query:      r.GetQuery(),
-		Exclude:    exclude,
+		Exclude:    cloneStrings(r.GetExclude()),
 		Kinds:      kinds,
 		MinSize:    r.GetMinSize(),
 		MaxSize:    r.GetMaxSize(),
@@ -218,6 +236,20 @@ func SearchQueryFromProto(r *metav1.SearchRequest) model.SearchQuery {
 		Type:       r.GetType(),
 		Limit:      r.GetLimit(),
 		Offset:     r.GetOffset(),
+
+		Sort:              sort,
+		Ascending:         r.GetSortAscending(),
+		Categories:        categoriesFromProto(r.GetCategories()),
+		Groups:            cloneStrings(r.GetGroups()),
+		MinCompletion:     uint16(min(r.GetMinCompletion(), maxCompletion)),
+		MinGrabs:          r.GetMinGrabs(),
+		IndexedWithinDays: r.GetIndexedWithinDays(),
+		Alive:             r.GetAlive(),
+		MinLeechers:       r.GetMinLeechers(),
+		MinPopularity:     r.GetMinPopularity(),
+		SeenWithinDays:    r.GetSeenWithinDays(),
+		MinFiles:          r.GetMinFiles(),
+		MaxFiles:          r.GetMaxFiles(),
 	}
 }
 
@@ -354,4 +386,49 @@ func cloneBytes(b []byte) []byte {
 	}
 
 	return append([]byte(nil), b...)
+}
+
+// maxCompletion is 100% in hundredths: a higher floor is one nothing can meet,
+// and clamping it keeps it from wrapping round in the narrower model field.
+const maxCompletion = 10000
+
+// categoriesToProto widens category ids for the wire.
+func categoriesToProto(categories []uint16) []uint32 {
+	if categories == nil {
+		return nil
+	}
+
+	out := make([]uint32, 0, len(categories))
+	for _, c := range categories {
+		out = append(out, uint32(c))
+	}
+
+	return out
+}
+
+// categoriesFromProto narrows category ids from the wire. An id too wide for a
+// newznab category is no category at all and is dropped rather than wrapped
+// into one that exists.
+func categoriesFromProto(categories []uint32) []uint16 {
+	if categories == nil {
+		return nil
+	}
+
+	out := make([]uint16, 0, len(categories))
+	for _, c := range categories {
+		if c <= math.MaxUint16 {
+			out = append(out, uint16(c))
+		}
+	}
+
+	return out
+}
+
+// cloneStrings copies a slice, keeping nil as nil so a round trip is exact.
+func cloneStrings(in []string) []string {
+	if in == nil {
+		return nil
+	}
+
+	return append([]string(nil), in...)
 }

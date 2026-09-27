@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/ModderMule/enodemeta/metahash"
@@ -231,6 +232,37 @@ func TestSearchResultPages(t *testing.T) {
 		if page != tc.page || pages != tc.pages || exact != tc.exact {
 			t.Errorf("%s: got page %d of %d (exact %v), want page %d of %d (exact %v)",
 				tc.name, page, pages, exact, tc.page, tc.pages, tc.exact)
+		}
+	}
+}
+
+func TestParseSortRoundTripsEveryName(t *testing.T) {
+	for s := SortUnspecified; s < sortCount; s++ {
+		got, ok := ParseSort(strings.ToUpper(s.String()))
+		t.Logf("input: %q output: %d ok=%t", s.String(), got, ok)
+
+		if !ok || got != s {
+			t.Errorf("sort %d (%q) parsed back as %d, ok=%t", s, s.String(), got, ok)
+		}
+	}
+
+	got, ok := ParseSort("bogus")
+	t.Logf("input: %q output: %d ok=%t", "bogus", got, ok)
+	if ok || got != SortUnspecified {
+		t.Errorf("an unknown name must be unspecified and not ok")
+	}
+
+	if SearchSort(200).Valid() || SearchSort(200).String() != "" {
+		t.Errorf("an out-of-range sort must be invalid and nameless")
+	}
+}
+
+func TestSortRanked(t *testing.T) {
+	for s := SortUnspecified; s < sortCount; s++ {
+		want := s == SortUnspecified || s == SortRelevance || s == SortBest
+		t.Logf("input: %q output: ranked=%t", s.String(), s.Ranked())
+		if s.Ranked() != want {
+			t.Errorf("sort %q ranked=%t, want %t", s.String(), s.Ranked(), want)
 		}
 	}
 }

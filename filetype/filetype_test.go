@@ -144,3 +144,46 @@ func TestDominant(t *testing.T) {
 		})
 	}
 }
+
+func TestAllIsEveryTypeOnce(t *testing.T) {
+	all := All()
+	t.Logf("input:  All()")
+	t.Logf("output: %v", all)
+
+	seen := map[string]bool{}
+	for _, name := range all {
+		if name == "" || seen[name] {
+			t.Errorf("type %q is empty or listed twice", name)
+		}
+		seen[name] = true
+	}
+
+	for _, name := range []string{Audio, Video, Image, Document, Program, Archive, CDImage, Collection} {
+		if !seen[name] {
+			t.Errorf("type %q is missing", name)
+		}
+	}
+
+	all[0] = "changed"
+	if All()[0] != Audio {
+		t.Errorf("All must return a fresh slice")
+	}
+}
+
+func TestLabel(t *testing.T) {
+	cases := map[string]string{
+		Audio:      "Audio",
+		Document:   "Document",
+		CDImage:    "CD image",
+		Collection: "Collection",
+		"Other":    "Other",
+	}
+
+	for in, want := range cases {
+		got := Label(in)
+		t.Logf("input: %q output: %q", in, got)
+		if got != want {
+			t.Errorf("Label(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
