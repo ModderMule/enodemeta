@@ -227,6 +227,8 @@ func SearchResultToProto(res model.SearchResult) *metav1.SearchResponse {
 		Entries:    EntriesToProto(res.Entries),
 		Total:      res.Total,
 		NextOffset: res.NextOffset,
+		TotalExact: res.TotalExact,
+		Window:     res.Window,
 	}
 }
 
@@ -240,6 +242,8 @@ func SearchResultFromProto(res *metav1.SearchResponse) model.SearchResult {
 		Entries:    EntriesFromProto(res.GetEntries()),
 		Total:      res.GetTotal(),
 		NextOffset: res.GetNextOffset(),
+		TotalExact: res.GetTotalExact(),
+		Window:     res.GetWindow(),
 	}
 }
 

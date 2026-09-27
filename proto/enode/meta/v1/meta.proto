@@ -167,4 +167,14 @@ message SearchResponse {
   // next_offset is the offset of the next page. Zero means there is no further
   // page: either nothing more matched or the server's window is exhausted.
   uint32 next_offset = 3;
+
+  // total_exact is true when total counts every match, false when it is a lower
+  // bound or was not counted. A server that predates it never sets it, which
+  // reads as "estimate" — the safe side.
+  bool total_exact = 4;
+
+  // window is how many releases paging reaches: offset plus limit never passes
+  // it. Zero means the server did not say. With total and the page size it gives
+  // the page count: min(total, window) divided by the page size, rounded up.
+  uint32 window = 5;
 }

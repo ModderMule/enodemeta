@@ -572,7 +572,15 @@ type SearchResponse struct {
 	Total uint64 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
 	// next_offset is the offset of the next page. Zero means there is no further
 	// page: either nothing more matched or the server's window is exhausted.
-	NextOffset    uint32 `protobuf:"varint,3,opt,name=next_offset,json=nextOffset,proto3" json:"next_offset,omitempty"`
+	NextOffset uint32 `protobuf:"varint,3,opt,name=next_offset,json=nextOffset,proto3" json:"next_offset,omitempty"`
+	// total_exact is true when total counts every match, false when it is a lower
+	// bound or was not counted. A server that predates it never sets it, which
+	// reads as "estimate" — the safe side.
+	TotalExact bool `protobuf:"varint,4,opt,name=total_exact,json=totalExact,proto3" json:"total_exact,omitempty"`
+	// window is how many releases paging reaches: offset plus limit never passes
+	// it. Zero means the server did not say. With total and the page size it gives
+	// the page count: min(total, window) divided by the page size, rounded up.
+	Window        uint32 `protobuf:"varint,5,opt,name=window,proto3" json:"window,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -628,6 +636,20 @@ func (x *SearchResponse) GetNextOffset() uint32 {
 	return 0
 }
 
+func (x *SearchResponse) GetTotalExact() bool {
+	if x != nil {
+		return x.TotalExact
+	}
+	return false
+}
+
+func (x *SearchResponse) GetWindow() uint32 {
+	if x != nil {
+		return x.Window
+	}
+	return 0
+}
+
 var File_enode_meta_v1_meta_proto protoreflect.FileDescriptor
 
 const file_enode_meta_v1_meta_proto_rawDesc = "" +
@@ -675,12 +697,15 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\x05limit\x18\t \x01(\rR\x05limit\x12\x16\n" +
 	"\x06offset\x18\n" +
 	" \x01(\rR\x06offset\x124\n" +
-	"\anetwork\x18\v \x01(\x0e2\x1a.enode.meta.v1.MetaNetworkR\anetwork\"{\n" +
+	"\anetwork\x18\v \x01(\x0e2\x1a.enode.meta.v1.MetaNetworkR\anetwork\"\xb4\x01\n" +
 	"\x0eSearchResponse\x122\n" +
 	"\aentries\x18\x01 \x03(\v2\x18.enode.meta.v1.MetaEntryR\aentries\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x04R\x05total\x12\x1f\n" +
 	"\vnext_offset\x18\x03 \x01(\rR\n" +
-	"nextOffset*b\n" +
+	"nextOffset\x12\x1f\n" +
+	"\vtotal_exact\x18\x04 \x01(\bR\n" +
+	"totalExact\x12\x16\n" +
+	"\x06window\x18\x05 \x01(\rR\x06window*b\n" +
 	"\bMetaKind\x12\x19\n" +
 	"\x15META_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V1\x10\x01\x12\x13\n" +

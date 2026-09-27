@@ -243,6 +243,50 @@ type SearchResult struct {
 
 	// NextOffset is where the next page starts. Zero means there is none.
 	NextOffset uint32
+
+	// TotalExact is true when Total counts every match, false when it is a lower
+	// bound or was not counted.
+	TotalExact bool
+
+	// Window is how many releases paging reaches. Zero means not stated.
+	Window uint32
+}
+
+// Pages says which page a result at offset is and how many pages paging reaches,
+// for pages of limit releases. exact is false when pages is an estimate: the
+// total was a lower bound and the window did not cap it. pages is zero when the
+// result does not say enough to count them — no limit, or no total.
+//
+// It trusts NextOffset over the arithmetic: a result that has a next page always
+// has more pages than the one it is.
+func (r SearchResult) Pages(offset, limit uint32) (page, pages uint32, exact bool) {
+	if limit == 0 {
+		return 0, 0, false
+	}
+	page = offset/limit + 1
+
+	if r.Total == 0 && r.NextOffset == 0 && len(r.Entries) == 0 && offset == 0 {
+		// Nothing matched, or nothing was counted; either way there is no page
+		// to number.
+		return page, 0, r.TotalExact
+	}
+
+	count, exact := r.Total, r.TotalExact
+	if r.Window > 0 && count > uint64(r.Window) {
+		// Paging stops at the window whatever the total is, so this count is
+		// certain even when the total is not.
+		count, exact = uint64(r.Window), true
+	}
+
+	pages = uint32((count + uint64(limit) - 1) / uint64(limit))
+	if pages < page {
+		pages, exact = page, false
+	}
+	if r.NextOffset > 0 && pages <= page {
+		pages, exact = page+1, false
+	}
+
+	return page, pages, exact
 }
 
 // DaemonInfo describes a catalogue daemon and where its feed stands.

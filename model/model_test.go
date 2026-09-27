@@ -202,3 +202,35 @@ func TestWholeSet(t *testing.T) {
 	}
 	t.Logf("output: the whole-set marker is recognised and index 0 is not")
 }
+
+func TestSearchResultPages(t *testing.T) {
+	entries := []Entry{validEntry()}
+
+	cases := []struct {
+		name          string
+		result        SearchResult
+		offset, limit uint32
+		page, pages   uint32
+		exact         bool
+	}{
+		{"exact", SearchResult{Entries: entries, Total: 45, TotalExact: true, NextOffset: 20, Window: 1000}, 0, 20, 1, 3, true},
+		{"last page", SearchResult{Entries: entries, Total: 45, TotalExact: true, Window: 1000}, 40, 20, 3, 3, true},
+		{"estimate", SearchResult{Entries: entries, Total: 45, NextOffset: 20, Window: 1000}, 0, 20, 1, 3, false},
+		{"capped by the window", SearchResult{Entries: entries, Total: 5000, NextOffset: 20, Window: 1000}, 0, 30, 1, 34, true},
+		{"no window stated", SearchResult{Entries: entries, Total: 5000, TotalExact: true, NextOffset: 20}, 0, 20, 1, 250, true},
+		{"next page past the count", SearchResult{Entries: entries, Total: 40, NextOffset: 40, Window: 1000}, 20, 20, 2, 3, false},
+		{"nothing matched", SearchResult{TotalExact: true}, 0, 20, 1, 0, true},
+		{"no limit", SearchResult{Entries: entries, Total: 45}, 0, 0, 0, 0, false},
+	}
+
+	for _, tc := range cases {
+		page, pages, exact := tc.result.Pages(tc.offset, tc.limit)
+		t.Logf("%s: input total=%d exact=%v window=%d next=%d offset=%d limit=%d; output page=%d pages=%d exact=%v",
+			tc.name, tc.result.Total, tc.result.TotalExact, tc.result.Window, tc.result.NextOffset, tc.offset, tc.limit, page, pages, exact)
+
+		if page != tc.page || pages != tc.pages || exact != tc.exact {
+			t.Errorf("%s: got page %d of %d (exact %v), want page %d of %d (exact %v)",
+				tc.name, page, pages, exact, tc.page, tc.pages, tc.exact)
+		}
+	}
+}

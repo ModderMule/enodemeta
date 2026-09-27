@@ -145,6 +145,8 @@ func TestSearchRoundTrip(t *testing.T) {
 		Entries:    []model.Entry{{Kind: metahash.KindBTV2, Identity: make([]byte, 32), Name: "x"}},
 		Total:      1234,
 		NextOffset: 200,
+		TotalExact: true,
+		Window:     1000,
 	}
 	got := SearchResultFromProto(SearchResultToProto(result))
 	t.Logf("input:  %+v", result)

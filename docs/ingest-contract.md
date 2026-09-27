@@ -266,6 +266,19 @@ it, a page that would is trimmed, and an offset at or past it returns an empty
 response without searching. An infohash query has a single page; any offset
 above zero is empty.
 
+Two more fields let a client say how many pages there are without asking again:
+
+- `total_exact` is true when `total` counts every match, and false when it is a
+  lower bound — the engine stopped counting early, say at its query time limit —
+  or was not counted at all. Show a false one as an estimate ("about 40 pages").
+- `window` is the daemon's paging depth, 1000 unless its operator changed it.
+  Zero means the daemon did not say.
+
+The pages a client can reach are `ceil(min(total, window) / limit)`. When `total`
+passes `window` that figure is certain even if `total` is not, since paging
+stops at the window either way. `next_offset` stays the authority on whether
+there is a next page. `model.SearchResult.Pages` does this arithmetic.
+
 ### Type
 
 `type` is an eD2K file-type string — `Audio`, `Video`, `Image`, `Doc`, `Pro`,
@@ -402,3 +415,11 @@ additions below are about meaning rather than about wire format.
     indexer is a second `Source` implementation behind the same interface, not
     the primary one. Its ports are `:9702` for this service, `:9712` for its web
     page and `:9722` for the newznab-compatible API it serves.
+
+13. **`SearchResponse` gained `total_exact` (4) and `window` (5)**, so that a
+    client can print "page 3 of 12" and know whether 12 is a count or an
+    estimate. Both are additive. A daemon that predates them leaves them zero,
+    which reads as "not exact, window not stated": a client never overclaims
+    from an older peer. The daemons read exactness from Manticore's
+    `total_relation`, returned by the same `SHOW META` as `total_found`, so it
+    costs no extra query.
