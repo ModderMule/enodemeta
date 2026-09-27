@@ -141,9 +141,11 @@ func (MetaNetwork) EnumDescriptor() ([]byte, []int) {
 
 // SearchSort is a result order.
 //
-// Only DATE, SIZE and SEEDERS read a key every network's MetaEntry carries, so
-// only those merge into one order across networks; a search over several
-// networks sorted by anything else interleaves them.
+// Only DATE and SIZE are answered by every network and read a key every
+// MetaEntry carries (age_days, total_size), so only those merge into one order
+// across networks; a search over several networks sorted by anything else
+// interleaves them. SEEDERS does not merge: a Usenet daemon answers it in
+// relevance order, and its seeders column is a different unit (amendment 9).
 type SearchSort int32
 
 const (

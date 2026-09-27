@@ -433,8 +433,10 @@ additions below are about meaning rather than about wire format.
     torrent sorts; a torrent daemon drops `categories`, `groups`,
     `min_completion`, `min_grabs`, `indexed_within_days` and the Usenet sorts —
     and answers an unknown or foreign sort in relevance order. `sort_ascending`
-    only applies to attribute sorts. Across networks, only `DATE`, `SIZE` and
-    `SEEDERS` merge into one order, because only their keys are on every
-    `MetaEntry` (`age_days`, `total_size`, `seeders`); a multi-network search
-    sorted any other way interleaves the networks, as before. The chosen and
+    only applies to attribute sorts. Across networks, only `DATE` and `SIZE`
+    merge into one order: both networks answer them and every `MetaEntry`
+    carries their keys (`age_days`, `total_size`). `SEEDERS` does not — a
+    Usenet daemon answers it in relevance order, and its `seeders` is another
+    unit (amendment 9) — so a multi-network search sorted by it, or by anything
+    else, interleaves the networks, as before. The chosen and
     rejected filters are listed in usenet-crawler's `docs/search-filters.md`.
