@@ -483,9 +483,13 @@ type GetInfoResponse struct {
 	// files is how many files the catalogued releases hold. A release yields one
 	// row per selectable file, so this is the figure an eD2K server can add to its
 	// own file total, which counts files rather than releases.
-	Files         uint64 `protobuf:"varint,11,opt,name=files,proto3" json:"files,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Files uint64 `protobuf:"varint,11,opt,name=files,proto3" json:"files,omitempty"`
+	// enhanced_search_available is true when SearchEnhanced answers: the daemon
+	// links releases to works, has a search index, and its operator turned it
+	// on. False, the call reports unimplemented.
+	EnhancedSearchAvailable bool `protobuf:"varint,12,opt,name=enhanced_search_available,json=enhancedSearchAvailable,proto3" json:"enhanced_search_available,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetInfoResponse) Reset() {
@@ -595,6 +599,13 @@ func (x *GetInfoResponse) GetFiles() uint64 {
 	return 0
 }
 
+func (x *GetInfoResponse) GetEnhancedSearchAvailable() bool {
+	if x != nil {
+		return x.EnhancedSearchAvailable
+	}
+	return false
+}
+
 var File_enode_meta_v1_ingest_proto protoreflect.FileDescriptor
 
 const file_enode_meta_v1_ingest_proto_rawDesc = "" +
@@ -623,7 +634,7 @@ const file_enode_meta_v1_ingest_proto_rawDesc = "" +
 	"\n" +
 	"catalog_id\x18\x01 \x01(\tR\tcatalogId\x12\x1a\n" +
 	"\bidentity\x18\x02 \x01(\fR\bidentity\"\x10\n" +
-	"\x0eGetInfoRequest\"\xff\x02\n" +
+	"\x0eGetInfoRequest\"\xbb\x03\n" +
 	"\x0fGetInfoResponse\x12\x16\n" +
 	"\x06daemon\x18\x01 \x01(\tR\x06daemon\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12)\n" +
@@ -638,7 +649,8 @@ const file_enode_meta_v1_ingest_proto_rawDesc = "" +
 	"\aindexer\x18\t \x01(\tR\aindexer\x12)\n" +
 	"\x10search_available\x18\n" +
 	" \x01(\bR\x0fsearchAvailable\x12\x14\n" +
-	"\x05files\x18\v \x01(\x04R\x05files*R\n" +
+	"\x05files\x18\v \x01(\x04R\x05files\x12:\n" +
+	"\x19enhanced_search_available\x18\f \x01(\bR\x17enhancedSearchAvailable*R\n" +
 	"\bChangeOp\x12\x19\n" +
 	"\x15CHANGE_OP_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10CHANGE_OP_UPSERT\x10\x01\x12\x15\n" +
@@ -647,13 +659,14 @@ const file_enode_meta_v1_ingest_proto_rawDesc = "" +
 	"\x1aRETRACT_REASON_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16RETRACT_REASON_EXPIRED\x10\x01\x12\x1a\n" +
 	"\x16RETRACT_REASON_BLOCKED\x10\x02\x12\"\n" +
-	"\x1eRETRACT_REASON_BELOW_THRESHOLD\x10\x032\xbe\x02\n" +
+	"\x1eRETRACT_REASON_BELOW_THRESHOLD\x10\x032\x9d\x03\n" +
 	"\n" +
 	"MetaIngest\x12P\n" +
 	"\tSubscribe\x12\x1f.enode.meta.v1.SubscribeRequest\x1a .enode.meta.v1.SubscribeResponse0\x01\x12M\n" +
 	"\rFetchMetaFile\x12#.enode.meta.v1.FetchMetaFileRequest\x1a\x17.enode.meta.v1.MetaFile\x12E\n" +
 	"\x06Search\x12\x1c.enode.meta.v1.SearchRequest\x1a\x1d.enode.meta.v1.SearchResponse\x12H\n" +
-	"\aGetInfo\x12\x1d.enode.meta.v1.GetInfoRequest\x1a\x1e.enode.meta.v1.GetInfoResponseB:Z8github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
+	"\aGetInfo\x12\x1d.enode.meta.v1.GetInfoRequest\x1a\x1e.enode.meta.v1.GetInfoResponse\x12]\n" +
+	"\x0eSearchEnhanced\x12$.enode.meta.v1.EnhancedSearchRequest\x1a%.enode.meta.v1.EnhancedSearchResponseB:Z8github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
 
 var (
 	file_enode_meta_v1_ingest_proto_rawDescOnce sync.Once
@@ -670,19 +683,21 @@ func file_enode_meta_v1_ingest_proto_rawDescGZIP() []byte {
 var file_enode_meta_v1_ingest_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_enode_meta_v1_ingest_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_enode_meta_v1_ingest_proto_goTypes = []any{
-	(ChangeOp)(0),                // 0: enode.meta.v1.ChangeOp
-	(RetractReason)(0),           // 1: enode.meta.v1.RetractReason
-	(*SubscribeRequest)(nil),     // 2: enode.meta.v1.SubscribeRequest
-	(*SubscribeResponse)(nil),    // 3: enode.meta.v1.SubscribeResponse
-	(*ReleaseChange)(nil),        // 4: enode.meta.v1.ReleaseChange
-	(*FetchMetaFileRequest)(nil), // 5: enode.meta.v1.FetchMetaFileRequest
-	(*GetInfoRequest)(nil),       // 6: enode.meta.v1.GetInfoRequest
-	(*GetInfoResponse)(nil),      // 7: enode.meta.v1.GetInfoResponse
-	(*MetaEntry)(nil),            // 8: enode.meta.v1.MetaEntry
-	(MetaKind)(0),                // 9: enode.meta.v1.MetaKind
-	(*SearchRequest)(nil),        // 10: enode.meta.v1.SearchRequest
-	(*MetaFile)(nil),             // 11: enode.meta.v1.MetaFile
-	(*SearchResponse)(nil),       // 12: enode.meta.v1.SearchResponse
+	(ChangeOp)(0),                  // 0: enode.meta.v1.ChangeOp
+	(RetractReason)(0),             // 1: enode.meta.v1.RetractReason
+	(*SubscribeRequest)(nil),       // 2: enode.meta.v1.SubscribeRequest
+	(*SubscribeResponse)(nil),      // 3: enode.meta.v1.SubscribeResponse
+	(*ReleaseChange)(nil),          // 4: enode.meta.v1.ReleaseChange
+	(*FetchMetaFileRequest)(nil),   // 5: enode.meta.v1.FetchMetaFileRequest
+	(*GetInfoRequest)(nil),         // 6: enode.meta.v1.GetInfoRequest
+	(*GetInfoResponse)(nil),        // 7: enode.meta.v1.GetInfoResponse
+	(*MetaEntry)(nil),              // 8: enode.meta.v1.MetaEntry
+	(MetaKind)(0),                  // 9: enode.meta.v1.MetaKind
+	(*SearchRequest)(nil),          // 10: enode.meta.v1.SearchRequest
+	(*EnhancedSearchRequest)(nil),  // 11: enode.meta.v1.EnhancedSearchRequest
+	(*MetaFile)(nil),               // 12: enode.meta.v1.MetaFile
+	(*SearchResponse)(nil),         // 13: enode.meta.v1.SearchResponse
+	(*EnhancedSearchResponse)(nil), // 14: enode.meta.v1.EnhancedSearchResponse
 }
 var file_enode_meta_v1_ingest_proto_depIdxs = []int32{
 	4,  // 0: enode.meta.v1.SubscribeResponse.changes:type_name -> enode.meta.v1.ReleaseChange
@@ -694,12 +709,14 @@ var file_enode_meta_v1_ingest_proto_depIdxs = []int32{
 	5,  // 6: enode.meta.v1.MetaIngest.FetchMetaFile:input_type -> enode.meta.v1.FetchMetaFileRequest
 	10, // 7: enode.meta.v1.MetaIngest.Search:input_type -> enode.meta.v1.SearchRequest
 	6,  // 8: enode.meta.v1.MetaIngest.GetInfo:input_type -> enode.meta.v1.GetInfoRequest
-	3,  // 9: enode.meta.v1.MetaIngest.Subscribe:output_type -> enode.meta.v1.SubscribeResponse
-	11, // 10: enode.meta.v1.MetaIngest.FetchMetaFile:output_type -> enode.meta.v1.MetaFile
-	12, // 11: enode.meta.v1.MetaIngest.Search:output_type -> enode.meta.v1.SearchResponse
-	7,  // 12: enode.meta.v1.MetaIngest.GetInfo:output_type -> enode.meta.v1.GetInfoResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
+	11, // 9: enode.meta.v1.MetaIngest.SearchEnhanced:input_type -> enode.meta.v1.EnhancedSearchRequest
+	3,  // 10: enode.meta.v1.MetaIngest.Subscribe:output_type -> enode.meta.v1.SubscribeResponse
+	12, // 11: enode.meta.v1.MetaIngest.FetchMetaFile:output_type -> enode.meta.v1.MetaFile
+	13, // 12: enode.meta.v1.MetaIngest.Search:output_type -> enode.meta.v1.SearchResponse
+	7,  // 13: enode.meta.v1.MetaIngest.GetInfo:output_type -> enode.meta.v1.GetInfoResponse
+	14, // 14: enode.meta.v1.MetaIngest.SearchEnhanced:output_type -> enode.meta.v1.EnhancedSearchResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name

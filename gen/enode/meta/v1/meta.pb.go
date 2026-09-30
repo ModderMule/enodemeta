@@ -225,6 +225,65 @@ func (SearchSort) EnumDescriptor() ([]byte, []int) {
 	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{2}
 }
 
+// WorkKind is what a linked work is.
+type WorkKind int32
+
+const (
+	WorkKind_WORK_KIND_UNSPECIFIED WorkKind = 0
+	WorkKind_WORK_KIND_MOVIE       WorkKind = 1
+	WorkKind_WORK_KIND_SERIES      WorkKind = 2
+	WorkKind_WORK_KIND_EPISODE     WorkKind = 3
+	WorkKind_WORK_KIND_ADULT_MOVIE WorkKind = 4
+	WorkKind_WORK_KIND_ADULT_SCENE WorkKind = 5
+)
+
+// Enum value maps for WorkKind.
+var (
+	WorkKind_name = map[int32]string{
+		0: "WORK_KIND_UNSPECIFIED",
+		1: "WORK_KIND_MOVIE",
+		2: "WORK_KIND_SERIES",
+		3: "WORK_KIND_EPISODE",
+		4: "WORK_KIND_ADULT_MOVIE",
+		5: "WORK_KIND_ADULT_SCENE",
+	}
+	WorkKind_value = map[string]int32{
+		"WORK_KIND_UNSPECIFIED": 0,
+		"WORK_KIND_MOVIE":       1,
+		"WORK_KIND_SERIES":      2,
+		"WORK_KIND_EPISODE":     3,
+		"WORK_KIND_ADULT_MOVIE": 4,
+		"WORK_KIND_ADULT_SCENE": 5,
+	}
+)
+
+func (x WorkKind) Enum() *WorkKind {
+	p := new(WorkKind)
+	*p = x
+	return p
+}
+
+func (x WorkKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (WorkKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_enode_meta_v1_meta_proto_enumTypes[3].Descriptor()
+}
+
+func (WorkKind) Type() protoreflect.EnumType {
+	return &file_enode_meta_v1_meta_proto_enumTypes[3]
+}
+
+func (x WorkKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use WorkKind.Descriptor instead.
+func (WorkKind) EnumDescriptor() ([]byte, []int) {
+	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{3}
+}
+
 // MetaEntry is one advertised row: a release, or one file inside it.
 //
 // Fields 1 to 16 are the specification's §6.5 layout, unchanged. Fields 17 and
@@ -860,6 +919,566 @@ func (x *SearchResponse) GetWindow() uint32 {
 	return 0
 }
 
+// WorkFilter narrows an enhanced search to releases by their linked work. Every
+// field set must hold (AND); a zero field is no filter, and a zero WorkFilter
+// matches what the plain search matches. A bound on a value the daemon does not
+// know for a release fails that release.
+type WorkFilter struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// kinds keeps a release whose work is of any of these kinds.
+	Kinds []WorkKind `protobuf:"varint,1,rep,packed,name=kinds,proto3,enum=enode.meta.v1.WorkKind" json:"kinds,omitempty"`
+	// The ids name works the way newznab's id search does: the releases of the
+	// work, and of every episode of a series. Several ids are a union, since a
+	// client sends every id it has for one title; an id that names no work
+	// matches nothing.
+	ImdbId      string `protobuf:"bytes,2,opt,name=imdb_id,json=imdbId,proto3" json:"imdb_id,omitempty"` // "tt0133093"
+	TmdbMovieId uint64 `protobuf:"varint,3,opt,name=tmdb_movie_id,json=tmdbMovieId,proto3" json:"tmdb_movie_id,omitempty"`
+	TmdbTvId    uint64 `protobuf:"varint,4,opt,name=tmdb_tv_id,json=tmdbTvId,proto3" json:"tmdb_tv_id,omitempty"`
+	TvdbId      uint64 `protobuf:"varint,5,opt,name=tvdb_id,json=tvdbId,proto3" json:"tvdb_id,omitempty"`
+	TvmazeId    uint64 `protobuf:"varint,6,opt,name=tvmaze_id,json=tvmazeId,proto3" json:"tvmaze_id,omitempty"`
+	TpdbId      string `protobuf:"bytes,7,opt,name=tpdb_id,json=tpdbId,proto3" json:"tpdb_id,omitempty"` // ThePornDB's uuid
+	Upc         string `protobuf:"bytes,8,opt,name=upc,proto3" json:"upc,omitempty"`                     // an adult DVD's barcode
+	// season and episode narrow a series named by an id to one season, or one
+	// episode of it.
+	Season  uint32 `protobuf:"varint,9,opt,name=season,proto3" json:"season,omitempty"`
+	Episode uint32 `protobuf:"varint,10,opt,name=episode,proto3" json:"episode,omitempty"`
+	// min_year and max_year bound the work's year; an episode's is its series'.
+	MinYear uint32 `protobuf:"varint,11,opt,name=min_year,json=minYear,proto3" json:"min_year,omitempty"`
+	MaxYear uint32 `protobuf:"varint,12,opt,name=max_year,json=maxYear,proto3" json:"max_year,omitempty"`
+	// The rating floors are on a 0–100 scale: IMDb's 7.3 is 73, Rotten
+	// Tomatoes' 85% is 85, Metacritic's 70/100 is 70. An episode's are its
+	// series'.
+	MinImdbScore       uint32 `protobuf:"varint,13,opt,name=min_imdb_score,json=minImdbScore,proto3" json:"min_imdb_score,omitempty"`
+	MinImdbVotes       uint32 `protobuf:"varint,14,opt,name=min_imdb_votes,json=minImdbVotes,proto3" json:"min_imdb_votes,omitempty"`
+	MinRtScore         uint32 `protobuf:"varint,15,opt,name=min_rt_score,json=minRtScore,proto3" json:"min_rt_score,omitempty"`
+	MinMetacriticScore uint32 `protobuf:"varint,16,opt,name=min_metacritic_score,json=minMetacriticScore,proto3" json:"min_metacritic_score,omitempty"`
+	// min_runtime and max_runtime bound the work's length in minutes.
+	MinRuntime uint32 `protobuf:"varint,17,opt,name=min_runtime,json=minRuntime,proto3" json:"min_runtime,omitempty"`
+	MaxRuntime uint32 `protobuf:"varint,18,opt,name=max_runtime,json=maxRuntime,proto3" json:"max_runtime,omitempty"`
+	// performers keeps a release whose work's cast names every one of these,
+	// matched the way the daemon normalises titles (case and punctuation aside).
+	// A name no cast holds matches nothing.
+	Performers []string `protobuf:"bytes,19,rep,name=performers,proto3" json:"performers,omitempty"`
+	// linked_only keeps a release linked to any work.
+	LinkedOnly    bool `protobuf:"varint,20,opt,name=linked_only,json=linkedOnly,proto3" json:"linked_only,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WorkFilter) Reset() {
+	*x = WorkFilter{}
+	mi := &file_enode_meta_v1_meta_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkFilter) ProtoMessage() {}
+
+func (x *WorkFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_enode_meta_v1_meta_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkFilter.ProtoReflect.Descriptor instead.
+func (*WorkFilter) Descriptor() ([]byte, []int) {
+	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *WorkFilter) GetKinds() []WorkKind {
+	if x != nil {
+		return x.Kinds
+	}
+	return nil
+}
+
+func (x *WorkFilter) GetImdbId() string {
+	if x != nil {
+		return x.ImdbId
+	}
+	return ""
+}
+
+func (x *WorkFilter) GetTmdbMovieId() uint64 {
+	if x != nil {
+		return x.TmdbMovieId
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetTmdbTvId() uint64 {
+	if x != nil {
+		return x.TmdbTvId
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetTvdbId() uint64 {
+	if x != nil {
+		return x.TvdbId
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetTvmazeId() uint64 {
+	if x != nil {
+		return x.TvmazeId
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetTpdbId() string {
+	if x != nil {
+		return x.TpdbId
+	}
+	return ""
+}
+
+func (x *WorkFilter) GetUpc() string {
+	if x != nil {
+		return x.Upc
+	}
+	return ""
+}
+
+func (x *WorkFilter) GetSeason() uint32 {
+	if x != nil {
+		return x.Season
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetEpisode() uint32 {
+	if x != nil {
+		return x.Episode
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetMinYear() uint32 {
+	if x != nil {
+		return x.MinYear
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetMaxYear() uint32 {
+	if x != nil {
+		return x.MaxYear
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetMinImdbScore() uint32 {
+	if x != nil {
+		return x.MinImdbScore
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetMinImdbVotes() uint32 {
+	if x != nil {
+		return x.MinImdbVotes
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetMinRtScore() uint32 {
+	if x != nil {
+		return x.MinRtScore
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetMinMetacriticScore() uint32 {
+	if x != nil {
+		return x.MinMetacriticScore
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetMinRuntime() uint32 {
+	if x != nil {
+		return x.MinRuntime
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetMaxRuntime() uint32 {
+	if x != nil {
+		return x.MaxRuntime
+	}
+	return 0
+}
+
+func (x *WorkFilter) GetPerformers() []string {
+	if x != nil {
+		return x.Performers
+	}
+	return nil
+}
+
+func (x *WorkFilter) GetLinkedOnly() bool {
+	if x != nil {
+		return x.LinkedOnly
+	}
+	return false
+}
+
+// Rating is one source's score of a work.
+type Rating struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// source is "imdb", "rottentomatoes" or "metacritic".
+	Source string `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
+	// score is on a 0–100 scale; votes is how many voted, where the source says.
+	Score         uint32 `protobuf:"varint,2,opt,name=score,proto3" json:"score,omitempty"`
+	Votes         uint32 `protobuf:"varint,3,opt,name=votes,proto3" json:"votes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Rating) Reset() {
+	*x = Rating{}
+	mi := &file_enode_meta_v1_meta_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Rating) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Rating) ProtoMessage() {}
+
+func (x *Rating) ProtoReflect() protoreflect.Message {
+	mi := &file_enode_meta_v1_meta_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Rating.ProtoReflect.Descriptor instead.
+func (*Rating) Descriptor() ([]byte, []int) {
+	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Rating) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *Rating) GetScore() uint32 {
+	if x != nil {
+		return x.Score
+	}
+	return 0
+}
+
+func (x *Rating) GetVotes() uint32 {
+	if x != nil {
+		return x.Votes
+	}
+	return 0
+}
+
+// WorkInfo describes the work a release is linked to. For an episode the ids,
+// title, year and ratings are its series' — what a client matches a tv result
+// by — and episode_title, season and episode its own.
+type WorkInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Kind          WorkKind               `protobuf:"varint,1,opt,name=kind,proto3,enum=enode.meta.v1.WorkKind" json:"kind,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	OriginalTitle string                 `protobuf:"bytes,3,opt,name=original_title,json=originalTitle,proto3" json:"original_title,omitempty"`
+	Year          uint32                 `protobuf:"varint,4,opt,name=year,proto3" json:"year,omitempty"`
+	ImdbId        string                 `protobuf:"bytes,5,opt,name=imdb_id,json=imdbId,proto3" json:"imdb_id,omitempty"`
+	// tmdb_id is a film's for a film, a show's for a series or an episode: TMDB
+	// numbers the two apart, and kind says which.
+	TmdbId       uint64    `protobuf:"varint,6,opt,name=tmdb_id,json=tmdbId,proto3" json:"tmdb_id,omitempty"`
+	TvdbId       uint64    `protobuf:"varint,7,opt,name=tvdb_id,json=tvdbId,proto3" json:"tvdb_id,omitempty"`
+	TvmazeId     uint64    `protobuf:"varint,8,opt,name=tvmaze_id,json=tvmazeId,proto3" json:"tvmaze_id,omitempty"`
+	TpdbId       string    `protobuf:"bytes,9,opt,name=tpdb_id,json=tpdbId,proto3" json:"tpdb_id,omitempty"`
+	Season       uint32    `protobuf:"varint,10,opt,name=season,proto3" json:"season,omitempty"`
+	Episode      uint32    `protobuf:"varint,11,opt,name=episode,proto3" json:"episode,omitempty"`
+	EpisodeTitle string    `protobuf:"bytes,12,opt,name=episode_title,json=episodeTitle,proto3" json:"episode_title,omitempty"`
+	Ratings      []*Rating `protobuf:"bytes,13,rep,name=ratings,proto3" json:"ratings,omitempty"`
+	// runtime_minutes is zero when unknown.
+	RuntimeMinutes uint32 `protobuf:"varint,14,opt,name=runtime_minutes,json=runtimeMinutes,proto3" json:"runtime_minutes,omitempty"`
+	// performers is the cast, in the order the daemon's source lists it.
+	Performers []string `protobuf:"bytes,15,rep,name=performers,proto3" json:"performers,omitempty"`
+	// upc is an adult DVD's barcode.
+	Upc           string `protobuf:"bytes,16,opt,name=upc,proto3" json:"upc,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WorkInfo) Reset() {
+	*x = WorkInfo{}
+	mi := &file_enode_meta_v1_meta_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkInfo) ProtoMessage() {}
+
+func (x *WorkInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_enode_meta_v1_meta_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkInfo.ProtoReflect.Descriptor instead.
+func (*WorkInfo) Descriptor() ([]byte, []int) {
+	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *WorkInfo) GetKind() WorkKind {
+	if x != nil {
+		return x.Kind
+	}
+	return WorkKind_WORK_KIND_UNSPECIFIED
+}
+
+func (x *WorkInfo) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *WorkInfo) GetOriginalTitle() string {
+	if x != nil {
+		return x.OriginalTitle
+	}
+	return ""
+}
+
+func (x *WorkInfo) GetYear() uint32 {
+	if x != nil {
+		return x.Year
+	}
+	return 0
+}
+
+func (x *WorkInfo) GetImdbId() string {
+	if x != nil {
+		return x.ImdbId
+	}
+	return ""
+}
+
+func (x *WorkInfo) GetTmdbId() uint64 {
+	if x != nil {
+		return x.TmdbId
+	}
+	return 0
+}
+
+func (x *WorkInfo) GetTvdbId() uint64 {
+	if x != nil {
+		return x.TvdbId
+	}
+	return 0
+}
+
+func (x *WorkInfo) GetTvmazeId() uint64 {
+	if x != nil {
+		return x.TvmazeId
+	}
+	return 0
+}
+
+func (x *WorkInfo) GetTpdbId() string {
+	if x != nil {
+		return x.TpdbId
+	}
+	return ""
+}
+
+func (x *WorkInfo) GetSeason() uint32 {
+	if x != nil {
+		return x.Season
+	}
+	return 0
+}
+
+func (x *WorkInfo) GetEpisode() uint32 {
+	if x != nil {
+		return x.Episode
+	}
+	return 0
+}
+
+func (x *WorkInfo) GetEpisodeTitle() string {
+	if x != nil {
+		return x.EpisodeTitle
+	}
+	return ""
+}
+
+func (x *WorkInfo) GetRatings() []*Rating {
+	if x != nil {
+		return x.Ratings
+	}
+	return nil
+}
+
+func (x *WorkInfo) GetRuntimeMinutes() uint32 {
+	if x != nil {
+		return x.RuntimeMinutes
+	}
+	return 0
+}
+
+func (x *WorkInfo) GetPerformers() []string {
+	if x != nil {
+		return x.Performers
+	}
+	return nil
+}
+
+func (x *WorkInfo) GetUpc() string {
+	if x != nil {
+		return x.Upc
+	}
+	return ""
+}
+
+// EnhancedSearchRequest is a plain search narrowed by the work.
+type EnhancedSearchRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Search        *SearchRequest         `protobuf:"bytes,1,opt,name=search,proto3" json:"search,omitempty"`
+	Work          *WorkFilter            `protobuf:"bytes,2,opt,name=work,proto3" json:"work,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnhancedSearchRequest) Reset() {
+	*x = EnhancedSearchRequest{}
+	mi := &file_enode_meta_v1_meta_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnhancedSearchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnhancedSearchRequest) ProtoMessage() {}
+
+func (x *EnhancedSearchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_enode_meta_v1_meta_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnhancedSearchRequest.ProtoReflect.Descriptor instead.
+func (*EnhancedSearchRequest) Descriptor() ([]byte, []int) {
+	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *EnhancedSearchRequest) GetSearch() *SearchRequest {
+	if x != nil {
+		return x.Search
+	}
+	return nil
+}
+
+func (x *EnhancedSearchRequest) GetWork() *WorkFilter {
+	if x != nil {
+		return x.Work
+	}
+	return nil
+}
+
+// EnhancedSearchResponse is a plain search's answer with the works described.
+type EnhancedSearchResponse struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Result *SearchResponse        `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+	// works describes the work of each release that has one, keyed by the
+	// entries' catalog_id: a release is several entries, and they share it. A
+	// release with no work is absent.
+	Works         map[string]*WorkInfo `protobuf:"bytes,2,rep,name=works,proto3" json:"works,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EnhancedSearchResponse) Reset() {
+	*x = EnhancedSearchResponse{}
+	mi := &file_enode_meta_v1_meta_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EnhancedSearchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EnhancedSearchResponse) ProtoMessage() {}
+
+func (x *EnhancedSearchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_enode_meta_v1_meta_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EnhancedSearchResponse.ProtoReflect.Descriptor instead.
+func (*EnhancedSearchResponse) Descriptor() ([]byte, []int) {
+	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *EnhancedSearchResponse) GetResult() *SearchResponse {
+	if x != nil {
+		return x.Result
+	}
+	return nil
+}
+
+func (x *EnhancedSearchResponse) GetWorks() map[string]*WorkInfo {
+	if x != nil {
+		return x.Works
+	}
+	return nil
+}
+
 var File_enode_meta_v1_meta_proto protoreflect.FileDescriptor
 
 const file_enode_meta_v1_meta_proto_rawDesc = "" +
@@ -930,7 +1549,71 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"nextOffset\x12\x1f\n" +
 	"\vtotal_exact\x18\x04 \x01(\bR\n" +
 	"totalExact\x12\x16\n" +
-	"\x06window\x18\x05 \x01(\rR\x06window*b\n" +
+	"\x06window\x18\x05 \x01(\rR\x06window\"\x82\x05\n" +
+	"\n" +
+	"WorkFilter\x12-\n" +
+	"\x05kinds\x18\x01 \x03(\x0e2\x17.enode.meta.v1.WorkKindR\x05kinds\x12\x17\n" +
+	"\aimdb_id\x18\x02 \x01(\tR\x06imdbId\x12\"\n" +
+	"\rtmdb_movie_id\x18\x03 \x01(\x04R\vtmdbMovieId\x12\x1c\n" +
+	"\n" +
+	"tmdb_tv_id\x18\x04 \x01(\x04R\btmdbTvId\x12\x17\n" +
+	"\atvdb_id\x18\x05 \x01(\x04R\x06tvdbId\x12\x1b\n" +
+	"\ttvmaze_id\x18\x06 \x01(\x04R\btvmazeId\x12\x17\n" +
+	"\atpdb_id\x18\a \x01(\tR\x06tpdbId\x12\x10\n" +
+	"\x03upc\x18\b \x01(\tR\x03upc\x12\x16\n" +
+	"\x06season\x18\t \x01(\rR\x06season\x12\x18\n" +
+	"\aepisode\x18\n" +
+	" \x01(\rR\aepisode\x12\x19\n" +
+	"\bmin_year\x18\v \x01(\rR\aminYear\x12\x19\n" +
+	"\bmax_year\x18\f \x01(\rR\amaxYear\x12$\n" +
+	"\x0emin_imdb_score\x18\r \x01(\rR\fminImdbScore\x12$\n" +
+	"\x0emin_imdb_votes\x18\x0e \x01(\rR\fminImdbVotes\x12 \n" +
+	"\fmin_rt_score\x18\x0f \x01(\rR\n" +
+	"minRtScore\x120\n" +
+	"\x14min_metacritic_score\x18\x10 \x01(\rR\x12minMetacriticScore\x12\x1f\n" +
+	"\vmin_runtime\x18\x11 \x01(\rR\n" +
+	"minRuntime\x12\x1f\n" +
+	"\vmax_runtime\x18\x12 \x01(\rR\n" +
+	"maxRuntime\x12\x1e\n" +
+	"\n" +
+	"performers\x18\x13 \x03(\tR\n" +
+	"performers\x12\x1f\n" +
+	"\vlinked_only\x18\x14 \x01(\bR\n" +
+	"linkedOnly\"L\n" +
+	"\x06Rating\x12\x16\n" +
+	"\x06source\x18\x01 \x01(\tR\x06source\x12\x14\n" +
+	"\x05score\x18\x02 \x01(\rR\x05score\x12\x14\n" +
+	"\x05votes\x18\x03 \x01(\rR\x05votes\"\xec\x03\n" +
+	"\bWorkInfo\x12+\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x17.enode.meta.v1.WorkKindR\x04kind\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12%\n" +
+	"\x0eoriginal_title\x18\x03 \x01(\tR\roriginalTitle\x12\x12\n" +
+	"\x04year\x18\x04 \x01(\rR\x04year\x12\x17\n" +
+	"\aimdb_id\x18\x05 \x01(\tR\x06imdbId\x12\x17\n" +
+	"\atmdb_id\x18\x06 \x01(\x04R\x06tmdbId\x12\x17\n" +
+	"\atvdb_id\x18\a \x01(\x04R\x06tvdbId\x12\x1b\n" +
+	"\ttvmaze_id\x18\b \x01(\x04R\btvmazeId\x12\x17\n" +
+	"\atpdb_id\x18\t \x01(\tR\x06tpdbId\x12\x16\n" +
+	"\x06season\x18\n" +
+	" \x01(\rR\x06season\x12\x18\n" +
+	"\aepisode\x18\v \x01(\rR\aepisode\x12#\n" +
+	"\repisode_title\x18\f \x01(\tR\fepisodeTitle\x12/\n" +
+	"\aratings\x18\r \x03(\v2\x15.enode.meta.v1.RatingR\aratings\x12'\n" +
+	"\x0fruntime_minutes\x18\x0e \x01(\rR\x0eruntimeMinutes\x12\x1e\n" +
+	"\n" +
+	"performers\x18\x0f \x03(\tR\n" +
+	"performers\x12\x10\n" +
+	"\x03upc\x18\x10 \x01(\tR\x03upc\"|\n" +
+	"\x15EnhancedSearchRequest\x124\n" +
+	"\x06search\x18\x01 \x01(\v2\x1c.enode.meta.v1.SearchRequestR\x06search\x12-\n" +
+	"\x04work\x18\x02 \x01(\v2\x19.enode.meta.v1.WorkFilterR\x04work\"\xea\x01\n" +
+	"\x16EnhancedSearchResponse\x125\n" +
+	"\x06result\x18\x01 \x01(\v2\x1d.enode.meta.v1.SearchResponseR\x06result\x12F\n" +
+	"\x05works\x18\x02 \x03(\v20.enode.meta.v1.EnhancedSearchResponse.WorksEntryR\x05works\x1aQ\n" +
+	"\n" +
+	"WorksEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12-\n" +
+	"\x05value\x18\x02 \x01(\v2\x17.enode.meta.v1.WorkInfoR\x05value:\x028\x01*b\n" +
 	"\bMetaKind\x12\x19\n" +
 	"\x15META_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V1\x10\x01\x12\x13\n" +
@@ -955,7 +1638,14 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\x11SEARCH_SORT_GRABS\x10\n" +
 	"\x12\x1a\n" +
 	"\x16SEARCH_SORT_COMPLETION\x10\v\x12\x17\n" +
-	"\x13SEARCH_SORT_INDEXED\x10\fB:Z8github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
+	"\x13SEARCH_SORT_INDEXED\x10\f*\x9d\x01\n" +
+	"\bWorkKind\x12\x19\n" +
+	"\x15WORK_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
+	"\x0fWORK_KIND_MOVIE\x10\x01\x12\x14\n" +
+	"\x10WORK_KIND_SERIES\x10\x02\x12\x15\n" +
+	"\x11WORK_KIND_EPISODE\x10\x03\x12\x19\n" +
+	"\x15WORK_KIND_ADULT_MOVIE\x10\x04\x12\x19\n" +
+	"\x15WORK_KIND_ADULT_SCENE\x10\x05B:Z8github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1b\x06proto3"
 
 var (
 	file_enode_meta_v1_meta_proto_rawDescOnce sync.Once
@@ -969,29 +1659,44 @@ func file_enode_meta_v1_meta_proto_rawDescGZIP() []byte {
 	return file_enode_meta_v1_meta_proto_rawDescData
 }
 
-var file_enode_meta_v1_meta_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_enode_meta_v1_meta_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_enode_meta_v1_meta_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_enode_meta_v1_meta_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_enode_meta_v1_meta_proto_goTypes = []any{
-	(MetaKind)(0),          // 0: enode.meta.v1.MetaKind
-	(MetaNetwork)(0),       // 1: enode.meta.v1.MetaNetwork
-	(SearchSort)(0),        // 2: enode.meta.v1.SearchSort
-	(*MetaEntry)(nil),      // 3: enode.meta.v1.MetaEntry
-	(*MetaFile)(nil),       // 4: enode.meta.v1.MetaFile
-	(*SearchRequest)(nil),  // 5: enode.meta.v1.SearchRequest
-	(*SearchResponse)(nil), // 6: enode.meta.v1.SearchResponse
+	(MetaKind)(0),                  // 0: enode.meta.v1.MetaKind
+	(MetaNetwork)(0),               // 1: enode.meta.v1.MetaNetwork
+	(SearchSort)(0),                // 2: enode.meta.v1.SearchSort
+	(WorkKind)(0),                  // 3: enode.meta.v1.WorkKind
+	(*MetaEntry)(nil),              // 4: enode.meta.v1.MetaEntry
+	(*MetaFile)(nil),               // 5: enode.meta.v1.MetaFile
+	(*SearchRequest)(nil),          // 6: enode.meta.v1.SearchRequest
+	(*SearchResponse)(nil),         // 7: enode.meta.v1.SearchResponse
+	(*WorkFilter)(nil),             // 8: enode.meta.v1.WorkFilter
+	(*Rating)(nil),                 // 9: enode.meta.v1.Rating
+	(*WorkInfo)(nil),               // 10: enode.meta.v1.WorkInfo
+	(*EnhancedSearchRequest)(nil),  // 11: enode.meta.v1.EnhancedSearchRequest
+	(*EnhancedSearchResponse)(nil), // 12: enode.meta.v1.EnhancedSearchResponse
+	nil,                            // 13: enode.meta.v1.EnhancedSearchResponse.WorksEntry
 }
 var file_enode_meta_v1_meta_proto_depIdxs = []int32{
-	0, // 0: enode.meta.v1.MetaEntry.kind:type_name -> enode.meta.v1.MetaKind
-	0, // 1: enode.meta.v1.MetaFile.kind:type_name -> enode.meta.v1.MetaKind
-	0, // 2: enode.meta.v1.SearchRequest.kinds:type_name -> enode.meta.v1.MetaKind
-	1, // 3: enode.meta.v1.SearchRequest.network:type_name -> enode.meta.v1.MetaNetwork
-	2, // 4: enode.meta.v1.SearchRequest.sort:type_name -> enode.meta.v1.SearchSort
-	3, // 5: enode.meta.v1.SearchResponse.entries:type_name -> enode.meta.v1.MetaEntry
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	0,  // 0: enode.meta.v1.MetaEntry.kind:type_name -> enode.meta.v1.MetaKind
+	0,  // 1: enode.meta.v1.MetaFile.kind:type_name -> enode.meta.v1.MetaKind
+	0,  // 2: enode.meta.v1.SearchRequest.kinds:type_name -> enode.meta.v1.MetaKind
+	1,  // 3: enode.meta.v1.SearchRequest.network:type_name -> enode.meta.v1.MetaNetwork
+	2,  // 4: enode.meta.v1.SearchRequest.sort:type_name -> enode.meta.v1.SearchSort
+	4,  // 5: enode.meta.v1.SearchResponse.entries:type_name -> enode.meta.v1.MetaEntry
+	3,  // 6: enode.meta.v1.WorkFilter.kinds:type_name -> enode.meta.v1.WorkKind
+	3,  // 7: enode.meta.v1.WorkInfo.kind:type_name -> enode.meta.v1.WorkKind
+	9,  // 8: enode.meta.v1.WorkInfo.ratings:type_name -> enode.meta.v1.Rating
+	6,  // 9: enode.meta.v1.EnhancedSearchRequest.search:type_name -> enode.meta.v1.SearchRequest
+	8,  // 10: enode.meta.v1.EnhancedSearchRequest.work:type_name -> enode.meta.v1.WorkFilter
+	7,  // 11: enode.meta.v1.EnhancedSearchResponse.result:type_name -> enode.meta.v1.SearchResponse
+	13, // 12: enode.meta.v1.EnhancedSearchResponse.works:type_name -> enode.meta.v1.EnhancedSearchResponse.WorksEntry
+	10, // 13: enode.meta.v1.EnhancedSearchResponse.WorksEntry.value:type_name -> enode.meta.v1.WorkInfo
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_enode_meta_v1_meta_proto_init() }
@@ -1004,8 +1709,8 @@ func file_enode_meta_v1_meta_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_enode_meta_v1_meta_proto_rawDesc), len(file_enode_meta_v1_meta_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   4,
+			NumEnums:      4,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

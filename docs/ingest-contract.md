@@ -28,13 +28,14 @@ eNode-go  ──Subscribe──────────────►  torrent-
           ──GetInfo────────────────►
 ```
 
-## The four calls
+## The five calls
 
 | Call | Shape | What it is for |
 |---|---|---|
 | `Subscribe` | server stream | The resumable changefeed of the published set |
 | `FetchMetaFile` | unary | The `.torrent` behind one release, on demand |
 | `Search` | unary | The part of the catalogue too large to publish |
+| `SearchEnhanced` | unary | `Search` narrowed and described by the linked work — optional, see amendment 15 |
 | `GetInfo` | unary | Who the daemon is and where its feed stands |
 
 ## The published set, and why there is one
@@ -303,7 +304,8 @@ keyed by the meta hash it minted. The fold is not reversible, so a later
 Returns the daemon name, version, contract version, the kinds it produces, the
 feed's `last_seq` and `purged_through_seq`, the published and catalogued counts,
 the number of files the catalogued releases hold (`files`), the indexer name it
-puts in every row, and whether search is available.
+puts in every row, whether search is available, and whether the enhanced search
+is (`enhanced_search_available`, amendment 15).
 
 `files` counts files, not releases: a multi-file release yields one row per
 selectable file. It is the figure an eD2K server adds to its own file total when
@@ -440,3 +442,42 @@ additions below are about meaning rather than about wire format.
     unit (amendment 9) — so a multi-network search sorted by it, or by anything
     else, interleaves the networks, as before. The chosen and
     rejected filters are listed in usenet-crawler's `docs/search-filters.md`.
+
+15. **`SearchEnhanced`, an optional search by the linked work.** A daemon that
+    links releases to works — films, series, episodes, adult films and scenes —
+    can narrow a search by them and describe them. It is a call of its own
+    rather than more `SearchRequest` fields, because the ignore rule of amendment
+    14 would make a torrent daemon answer a search for "IMDb 8 and up" with every
+    match it has: a filter nobody applies is a wrong answer here, not a looser
+    one. So:
+
+    - **It is off unless the operator turns it on**, and only a daemon with a
+      search index and linked works can: usenet-crawler's
+      `ingest.enhanced_search`, default false. `GetInfoResponse.
+      enhanced_search_available` says whether it answers. Off, or on a daemon
+      that has no works at all (torrent-crawler), the call is
+      **`Unimplemented`**. **A consumer checks the flag first**: eNode-go counts
+      an unimplemented answer from `Search` as the daemon being down, and must
+      not learn otherwise by asking.
+    - **`EnhancedSearchRequest`** is a whole `SearchRequest` — every plain
+      filter, sort and page applies as before — and a `WorkFilter`. Every field
+      set in the filter must hold. The ids (`imdb_id`, `tmdb_movie_id`,
+      `tmdb_tv_id`, `tvdb_id`, `tvmaze_id`, `tpdb_id`, `upc`) are a union among
+      themselves, as newznab's id search is, and name a work's releases and
+      those of every episode of a series; `season` and `episode` narrow a series
+      to one season or episode; an id that names no work matches nothing.
+      `performers` must all be in the work's cast, matched case- and
+      punctuation-blind; a name no cast holds matches nothing. The bounds
+      (`min_year` … `max_runtime`) fail a release whose value the daemon does
+      not know, so "under 45 minutes" does not answer every release with no
+      runtime. Scores are on a 0–100 scale; runtimes are minutes. An episode's
+      year and ratings are its series'.
+    - **`EnhancedSearchResponse`** is the plain `SearchResponse` and a map of
+      `WorkInfo` keyed by `catalog_id`: a release is several entries, and they
+      share one work. A release with no work is absent from the map. For an
+      episode, `WorkInfo`'s ids, title, year and ratings are its series' — what
+      a client matches a TV result by — and `episode_title`, `season` and
+      `episode` its own.
+    - **`MetaEntry` and the feed are unchanged**, so neither the eD2K
+      pseudo-hash nor the `FT_META_*` tags move. `MetaApi` does not expose the
+      call yet; eNode-go would add it the same way, behind the same flag.

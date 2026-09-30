@@ -39,6 +39,8 @@ const (
 	MetaIngestSearchProcedure = "/enode.meta.v1.MetaIngest/Search"
 	// MetaIngestGetInfoProcedure is the procedure name of the MetaIngest's GetInfo RPC.
 	MetaIngestGetInfoProcedure = "/enode.meta.v1.MetaIngest/GetInfo"
+	// MetaIngestSearchEnhancedProcedure is the procedure name of the MetaIngest's SearchEnhanced RPC.
+	MetaIngestSearchEnhancedProcedure = "/enode.meta.v1.MetaIngest/SearchEnhanced"
 )
 
 var (
@@ -70,6 +72,13 @@ var (
 			Procedure:  MetaIngestGetInfoProcedure,
 		}
 	})
+	metaIngestSearchEnhancedSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_enode_meta_v1_ingest_proto.Services().ByName("MetaIngest").Methods().ByName("SearchEnhanced"),
+			Procedure:  MetaIngestSearchEnhancedProcedure,
+		}
+	})
 )
 
 // MetaIngestClient is a client for the enode.meta.v1.MetaIngest service.
@@ -88,6 +97,13 @@ type MetaIngestClient interface {
 	Search(context.Context, *v1.SearchRequest) (*v1.SearchResponse, error)
 	// GetInfo describes the daemon and where its feed currently stands.
 	GetInfo(context.Context, *v1.GetInfoRequest) (*v1.GetInfoResponse, error)
+	// SearchEnhanced is Search narrowed and described by the work a release is
+	// linked to. It is optional: a daemon that does not link works, or whose
+	// operator left it off, reports unimplemented, and says so beforehand in
+	// GetInfoResponse.enhanced_search_available — which a consumer checks first,
+	// since an unimplemented answer is otherwise indistinguishable from a daemon
+	// that is down.
+	SearchEnhanced(context.Context, *v1.EnhancedSearchRequest) (*v1.EnhancedSearchResponse, error)
 }
 
 // NewMetaIngestClient constructs a client for the enode.meta.v1.MetaIngest service. Multiple
@@ -132,6 +148,13 @@ type MetaIngestHandler interface {
 	Search(context.Context, *v1.SearchRequest) (*v1.SearchResponse, error)
 	// GetInfo describes the daemon and where its feed currently stands.
 	GetInfo(context.Context, *v1.GetInfoRequest) (*v1.GetInfoResponse, error)
+	// SearchEnhanced is Search narrowed and described by the work a release is
+	// linked to. It is optional: a daemon that does not link works, or whose
+	// operator left it off, reports unimplemented, and says so beforehand in
+	// GetInfoResponse.enhanced_search_available — which a consumer checks first,
+	// since an unimplemented answer is otherwise indistinguishable from a daemon
+	// that is down.
+	SearchEnhanced(context.Context, *v1.EnhancedSearchRequest) (*v1.EnhancedSearchResponse, error)
 }
 
 // RegisterMetaIngestHandler registers svc as the enode.meta.v1.MetaIngest implementation on server.
@@ -142,6 +165,7 @@ func RegisterMetaIngestHandler(server *connect.Server, svc MetaIngestHandler) {
 		connect.Method{Spec: metaIngestFetchMetaFileSpec(), Handler: adapter.fetchMetaFile},
 		connect.Method{Spec: metaIngestSearchSpec(), Handler: adapter.search},
 		connect.Method{Spec: metaIngestGetInfoSpec(), Handler: adapter.getInfo},
+		connect.Method{Spec: metaIngestSearchEnhancedSpec(), Handler: adapter.searchEnhanced},
 	)
 }
 
@@ -179,6 +203,10 @@ func (UnimplementedMetaIngestHandler) GetInfo(context.Context, *v1.GetInfoReques
 	return nil, connect.NewError(connect.CodeUnimplemented, "enode.meta.v1.MetaIngest.GetInfo is not implemented")
 }
 
+func (UnimplementedMetaIngestHandler) SearchEnhanced(context.Context, *v1.EnhancedSearchRequest) (*v1.EnhancedSearchResponse, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "enode.meta.v1.MetaIngest.SearchEnhanced is not implemented")
+}
+
 type metaIngestClient struct {
 	client *connect.Client
 }
@@ -210,6 +238,14 @@ func (c *metaIngestClient) Search(ctx context.Context, req *v1.SearchRequest) (*
 func (c *metaIngestClient) GetInfo(ctx context.Context, req *v1.GetInfoRequest) (*v1.GetInfoResponse, error) {
 	var res v1.GetInfoResponse
 	if err := c.client.CallUnary(ctx, metaIngestGetInfoSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *metaIngestClient) SearchEnhanced(ctx context.Context, req *v1.EnhancedSearchRequest) (*v1.EnhancedSearchResponse, error) {
+	var res v1.EnhancedSearchResponse
+	if err := c.client.CallUnary(ctx, metaIngestSearchEnhancedSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -255,6 +291,18 @@ func (h metaIngestHandler) getInfo(ctx context.Context, _ connect.Spec, stream c
 		return err
 	}
 	res, err := h.svc.GetInfo(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h metaIngestHandler) searchEnhanced(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.EnhancedSearchRequest
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.SearchEnhanced(ctx, &req)
 	if err != nil {
 		return err
 	}

@@ -211,6 +211,8 @@ func TestDaemonInfoRoundTrip(t *testing.T) {
 		Files:            3400000,
 		Indexer:          "dht",
 		SearchAvailable:  true,
+
+		EnhancedSearchAvailable: true,
 	}
 	t.Logf("input:  %+v", info)
 
@@ -219,6 +221,97 @@ func TestDaemonInfoRoundTrip(t *testing.T) {
 
 	if !reflect.DeepEqual(info, back) {
 		t.Errorf("daemon info lost something:\n in: %+v\nout: %+v", info, back)
+	}
+}
+
+// TestWorkFilterRoundTripLosesNothing fills every field of the work filter by reflection,
+// the slices by hand, and converts both ways: a field the converters forget fails here.
+func TestWorkFilterRoundTripLosesNothing(t *testing.T) {
+	var filter model.WorkFilter
+	fillStruct(t, reflect.ValueOf(&filter).Elem())
+
+	filter.Kinds = []model.WorkKind{model.WorkEpisode, model.WorkAdultMovie}
+	filter.Performers = []string{"Chennin Blanc", "Leah Meow"}
+
+	t.Logf("input:  %+v", filter)
+
+	back := WorkFilterFromProto(WorkFilterToProto(filter))
+	t.Logf("output: %+v", back)
+
+	compareFields(t, filter, back)
+}
+
+// TestWorkInfoRoundTripLosesNothing does the same for a work's description.
+func TestWorkInfoRoundTripLosesNothing(t *testing.T) {
+	var info model.WorkInfo
+	fillStruct(t, reflect.ValueOf(&info).Elem())
+
+	info.Kind = model.WorkAdultMovie
+	info.Ratings = []model.Rating{{Source: model.RatingIMDb, Score: 73, Votes: 1234}, {Source: model.RatingRottenTomatoes, Score: 85}}
+	info.Performers = []string{"Chennin Blanc"}
+
+	t.Logf("input:  %+v", info)
+
+	back := WorkInfoFromProto(WorkInfoToProto(info))
+	t.Logf("output: %+v", back)
+
+	compareFields(t, info, back)
+}
+
+// TestEnhancedSearchRoundTrip converts a query and a result with its works both ways, and a
+// zero filter both ways stays zero.
+func TestEnhancedSearchRoundTrip(t *testing.T) {
+	query := model.EnhancedSearchQuery{
+		Search: model.SearchQuery{Query: "gang bang angels", Limit: 20, Categories: []uint16{6000}},
+		Work:   model.WorkFilter{Kinds: []model.WorkKind{model.WorkAdultMovie}, MinRuntime: 60, Performers: []string{"Chennin Blanc"}},
+	}
+	t.Logf("input:  %+v", query)
+
+	gotQuery := EnhancedSearchQueryFromProto(EnhancedSearchQueryToProto(query))
+	t.Logf("output: %+v", gotQuery)
+
+	if !reflect.DeepEqual(query, gotQuery) {
+		t.Errorf("the query lost something:\n in: %+v\nout: %+v", query, gotQuery)
+	}
+
+	result := model.EnhancedSearchResult{
+		Result: model.SearchResult{Total: 1, TotalExact: true, Window: 1000},
+		Works: map[string]model.WorkInfo{
+			"nzb:AB12": {Kind: model.WorkAdultMovie, Title: "Gang Bang Angels 4", Year: 1999, RuntimeMinutes: 90, UPC: "618582602743", Performers: []string{"Chennin Blanc"}},
+		},
+	}
+	t.Logf("input:  %+v", result)
+
+	gotResult := EnhancedSearchResultFromProto(EnhancedSearchResultToProto(result))
+	t.Logf("output: %+v", gotResult)
+
+	if !reflect.DeepEqual(result, gotResult) {
+		t.Errorf("the result lost something:\n in: %+v\nout: %+v", result, gotResult)
+	}
+
+	zero := WorkFilterFromProto(WorkFilterToProto(model.WorkFilter{}))
+	t.Logf("input:  a zero filter; output: %+v, zero %v", zero, zero.IsZero())
+
+	if !zero.IsZero() {
+		t.Errorf("a zero filter came back as %+v", zero)
+	}
+}
+
+// TestWorkFilterFromProtoGuardsNarrowing: a kind from a newer peer is dropped, a score past
+// 100 is 100, and a year past uint16 is clamped rather than wrapped.
+func TestWorkFilterFromProtoGuardsNarrowing(t *testing.T) {
+	req := &metav1.WorkFilter{
+		Kinds:        []metav1.WorkKind{metav1.WorkKind_WORK_KIND_MOVIE, metav1.WorkKind(42), metav1.WorkKind_WORK_KIND_UNSPECIFIED},
+		MinImdbScore: 250,
+		MinYear:      70000,
+	}
+	t.Logf("input:  kinds=%v min_imdb_score=%d min_year=%d", req.GetKinds(), req.GetMinImdbScore(), req.GetMinYear())
+
+	got := WorkFilterFromProto(req)
+	t.Logf("output: kinds=%v min_imdb_score=%d min_year=%d", got.Kinds, got.MinIMDbScore, got.MinYear)
+
+	if !reflect.DeepEqual(got.Kinds, []model.WorkKind{model.WorkMovie}) || got.MinIMDbScore != 100 || got.MinYear != 0xFFFF {
+		t.Errorf("got %+v; want only the movie kind, a score of 100 and the year clamped", got)
 	}
 }
 
@@ -293,6 +386,19 @@ func fillStruct(t *testing.T, v reflect.Value) {
 		default:
 			t.Fatalf("fillStruct does not handle %s (field %s) — extend it",
 				field.Kind(), v.Type().Field(i).Name)
+		}
+	}
+}
+
+// compareFields reports each field of two structs of one type that differs, by name.
+func compareFields(t *testing.T, in, out any) {
+	t.Helper()
+
+	inValue, outValue := reflect.ValueOf(in), reflect.ValueOf(out)
+	for i := 0; i < inValue.NumField(); i++ {
+		name := inValue.Type().Field(i).Name
+		if !reflect.DeepEqual(inValue.Field(i).Interface(), outValue.Field(i).Interface()) {
+			t.Errorf("%s: got %v, want %v", name, outValue.Field(i), inValue.Field(i))
 		}
 	}
 }

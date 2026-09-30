@@ -252,3 +252,129 @@ message SearchResponse {
   // the page count: min(total, window) divided by the page size, rounded up.
   uint32 window = 5;
 }
+
+// The enhanced search: what a daemon knows of the film, show, episode or adult
+// work a release carries. It is a separate call, MetaIngest.SearchEnhanced, off
+// by default and advertised by GetInfoResponse.enhanced_search_available, because
+// only a daemon that links releases to works can answer it: a torrent daemon
+// reports it unimplemented. See docs/ingest-contract.md, amendment 15.
+
+// WorkKind is what a linked work is.
+enum WorkKind {
+  WORK_KIND_UNSPECIFIED = 0;
+  WORK_KIND_MOVIE = 1;
+  WORK_KIND_SERIES = 2;
+  WORK_KIND_EPISODE = 3;
+  WORK_KIND_ADULT_MOVIE = 4;
+  WORK_KIND_ADULT_SCENE = 5;
+}
+
+// WorkFilter narrows an enhanced search to releases by their linked work. Every
+// field set must hold (AND); a zero field is no filter, and a zero WorkFilter
+// matches what the plain search matches. A bound on a value the daemon does not
+// know for a release fails that release.
+message WorkFilter {
+  // kinds keeps a release whose work is of any of these kinds.
+  repeated WorkKind kinds = 1;
+
+  // The ids name works the way newznab's id search does: the releases of the
+  // work, and of every episode of a series. Several ids are a union, since a
+  // client sends every id it has for one title; an id that names no work
+  // matches nothing.
+  string imdb_id = 2;   // "tt0133093"
+  uint64 tmdb_movie_id = 3;
+  uint64 tmdb_tv_id = 4;
+  uint64 tvdb_id = 5;
+  uint64 tvmaze_id = 6;
+  string tpdb_id = 7;   // ThePornDB's uuid
+  string upc = 8;       // an adult DVD's barcode
+
+  // season and episode narrow a series named by an id to one season, or one
+  // episode of it.
+  uint32 season = 9;
+  uint32 episode = 10;
+
+  // min_year and max_year bound the work's year; an episode's is its series'.
+  uint32 min_year = 11;
+  uint32 max_year = 12;
+
+  // The rating floors are on a 0–100 scale: IMDb's 7.3 is 73, Rotten
+  // Tomatoes' 85% is 85, Metacritic's 70/100 is 70. An episode's are its
+  // series'.
+  uint32 min_imdb_score = 13;
+  uint32 min_imdb_votes = 14;
+  uint32 min_rt_score = 15;
+  uint32 min_metacritic_score = 16;
+
+  // min_runtime and max_runtime bound the work's length in minutes.
+  uint32 min_runtime = 17;
+  uint32 max_runtime = 18;
+
+  // performers keeps a release whose work's cast names every one of these,
+  // matched the way the daemon normalises titles (case and punctuation aside).
+  // A name no cast holds matches nothing.
+  repeated string performers = 19;
+
+  // linked_only keeps a release linked to any work.
+  bool linked_only = 20;
+}
+
+// Rating is one source's score of a work.
+message Rating {
+  // source is "imdb", "rottentomatoes" or "metacritic".
+  string source = 1;
+
+  // score is on a 0–100 scale; votes is how many voted, where the source says.
+  uint32 score = 2;
+  uint32 votes = 3;
+}
+
+// WorkInfo describes the work a release is linked to. For an episode the ids,
+// title, year and ratings are its series' — what a client matches a tv result
+// by — and episode_title, season and episode its own.
+message WorkInfo {
+  WorkKind kind = 1;
+
+  string title = 2;
+  string original_title = 3;
+  uint32 year = 4;
+
+  string imdb_id = 5;
+  // tmdb_id is a film's for a film, a show's for a series or an episode: TMDB
+  // numbers the two apart, and kind says which.
+  uint64 tmdb_id = 6;
+  uint64 tvdb_id = 7;
+  uint64 tvmaze_id = 8;
+  string tpdb_id = 9;
+
+  uint32 season = 10;
+  uint32 episode = 11;
+  string episode_title = 12;
+
+  repeated Rating ratings = 13;
+
+  // runtime_minutes is zero when unknown.
+  uint32 runtime_minutes = 14;
+
+  // performers is the cast, in the order the daemon's source lists it.
+  repeated string performers = 15;
+
+  // upc is an adult DVD's barcode.
+  string upc = 16;
+}
+
+// EnhancedSearchRequest is a plain search narrowed by the work.
+message EnhancedSearchRequest {
+  SearchRequest search = 1;
+  WorkFilter work = 2;
+}
+
+// EnhancedSearchResponse is a plain search's answer with the works described.
+message EnhancedSearchResponse {
+  SearchResponse result = 1;
+
+  // works describes the work of each release that has one, keyed by the
+  // entries' catalog_id: a release is several entries, and they share it. A
+  // release with no work is absent.
+  map<string, WorkInfo> works = 2;
+}

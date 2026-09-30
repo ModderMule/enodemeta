@@ -30,6 +30,14 @@ service MetaIngest {
 
   // GetInfo describes the daemon and where its feed currently stands.
   rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
+
+  // SearchEnhanced is Search narrowed and described by the work a release is
+  // linked to. It is optional: a daemon that does not link works, or whose
+  // operator left it off, reports unimplemented, and says so beforehand in
+  // GetInfoResponse.enhanced_search_available — which a consumer checks first,
+  // since an unimplemented answer is otherwise indistinguishable from a daemon
+  // that is down.
+  rpc SearchEnhanced(EnhancedSearchRequest) returns (EnhancedSearchResponse);
 }
 
 // ChangeOp is what happened to a release.
@@ -150,4 +158,9 @@ message GetInfoResponse {
   // row per selectable file, so this is the figure an eD2K server can add to its
   // own file total, which counts files rather than releases.
   uint64 files = 11;
+
+  // enhanced_search_available is true when SearchEnhanced answers: the daemon
+  // links releases to works, has a search index, and its operator turned it
+  // on. False, the call reports unimplemented.
+  bool enhanced_search_available = 12;
 }

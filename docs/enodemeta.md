@@ -278,6 +278,18 @@ category table and a quota clock, and neither other consumer wants it — eMuleQ
 *is* a newznab client and eNode-go serves eD2K. The shared client-facing API this
 list still defers is protobuf, not XML.
 
+## The enhanced search
+
+`MetaIngest.SearchEnhanced` (ingest contract, amendment 15) is the optional search by
+the work a release is linked to. `model.EnhancedSearchQuery` is a `SearchQuery` and a
+`WorkFilter` (kinds, ids, season and episode, year, IMDb / Rotten Tomatoes / Metacritic
+floors on a 0–100 scale, runtime in minutes, performers); `model.EnhancedSearchResult`
+is a `SearchResult` and a `WorkInfo` per `catalog_id`. `pbconv` converts both, clamping
+what a newer peer might send (a score past 100, an unknown kind). A daemon advertises it
+in `GetInfoResponse.enhanced_search_available` and otherwise answers `Unimplemented`:
+usenet-crawler serves it behind `ingest.enhanced_search` (default off); torrent-crawler,
+which links no works, always answers `Unimplemented`.
+
 ## Deferred
 
 - ~~**`api.proto` (MetaApi)**~~ — built: `proto/enode/meta/v1/api.proto` defines

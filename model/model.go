@@ -406,4 +406,8 @@ type DaemonInfo struct {
 
 	Indexer         string
 	SearchAvailable bool
+
+	// EnhancedSearchAvailable says SearchEnhanced answers. False, it reports
+	// unimplemented.
+	EnhancedSearchAvailable bool
 }

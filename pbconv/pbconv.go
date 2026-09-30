@@ -298,6 +298,8 @@ func DaemonInfoToProto(info model.DaemonInfo) *metav1.GetInfoResponse {
 		Files:            info.Files,
 		Indexer:          info.Indexer,
 		SearchAvailable:  info.SearchAvailable,
+
+		EnhancedSearchAvailable: info.EnhancedSearchAvailable,
 	}
 }
 
@@ -324,6 +326,197 @@ func DaemonInfoFromProto(res *metav1.GetInfoResponse) model.DaemonInfo {
 		Files:            res.GetFiles(),
 		Indexer:          res.GetIndexer(),
 		SearchAvailable:  res.GetSearchAvailable(),
+
+		EnhancedSearchAvailable: res.GetEnhancedSearchAvailable(),
+	}
+}
+
+// EnhancedSearchQueryToProto converts an enhanced query.
+func EnhancedSearchQueryToProto(q model.EnhancedSearchQuery) *metav1.EnhancedSearchRequest {
+	return &metav1.EnhancedSearchRequest{
+		Search: SearchQueryToProto(q.Search),
+		Work:   WorkFilterToProto(q.Work),
+	}
+}
+
+// EnhancedSearchQueryFromProto converts an enhanced query back.
+func EnhancedSearchQueryFromProto(r *metav1.EnhancedSearchRequest) model.EnhancedSearchQuery {
+	if r == nil {
+		return model.EnhancedSearchQuery{}
+	}
+
+	return model.EnhancedSearchQuery{
+		Search: SearchQueryFromProto(r.GetSearch()),
+		Work:   WorkFilterFromProto(r.GetWork()),
+	}
+}
+
+// EnhancedSearchResultToProto converts an enhanced result.
+func EnhancedSearchResultToProto(res model.EnhancedSearchResult) *metav1.EnhancedSearchResponse {
+	var works map[string]*metav1.WorkInfo
+
+	if len(res.Works) > 0 {
+		works = make(map[string]*metav1.WorkInfo, len(res.Works))
+		for id, info := range res.Works {
+			works[id] = WorkInfoToProto(info)
+		}
+	}
+
+	return &metav1.EnhancedSearchResponse{
+		Result: SearchResultToProto(res.Result),
+		Works:  works,
+	}
+}
+
+// EnhancedSearchResultFromProto converts an enhanced result back.
+func EnhancedSearchResultFromProto(res *metav1.EnhancedSearchResponse) model.EnhancedSearchResult {
+	if res == nil {
+		return model.EnhancedSearchResult{}
+	}
+
+	out := model.EnhancedSearchResult{Result: SearchResultFromProto(res.GetResult())}
+
+	if len(res.GetWorks()) > 0 {
+		out.Works = make(map[string]model.WorkInfo, len(res.GetWorks()))
+		for id, info := range res.GetWorks() {
+			out.Works[id] = WorkInfoFromProto(info)
+		}
+	}
+
+	return out
+}
+
+// WorkFilterToProto converts a work filter.
+func WorkFilterToProto(f model.WorkFilter) *metav1.WorkFilter {
+	var kinds []metav1.WorkKind
+	for _, k := range f.Kinds {
+		kinds = append(kinds, metav1.WorkKind(k))
+	}
+
+	return &metav1.WorkFilter{
+		Kinds:              kinds,
+		ImdbId:             f.IMDbID,
+		TmdbMovieId:        f.TMDBMovieID,
+		TmdbTvId:           f.TMDBTVID,
+		TvdbId:             f.TVDBID,
+		TvmazeId:           f.TVMazeID,
+		TpdbId:             f.TPDBID,
+		Upc:                f.UPC,
+		Season:             uint32(f.Season),
+		Episode:            uint32(f.Episode),
+		MinYear:            uint32(f.MinYear),
+		MaxYear:            uint32(f.MaxYear),
+		MinImdbScore:       uint32(f.MinIMDbScore),
+		MinImdbVotes:       f.MinIMDbVotes,
+		MinRtScore:         uint32(f.MinRTScore),
+		MinMetacriticScore: uint32(f.MinMetacriticScore),
+		MinRuntime:         uint32(f.MinRuntime),
+		MaxRuntime:         uint32(f.MaxRuntime),
+		Performers:         cloneStrings(f.Performers),
+		LinkedOnly:         f.LinkedOnly,
+	}
+}
+
+// WorkFilterFromProto converts a work filter back. A kind this build does not know is
+// dropped, and a number past what the model holds is clamped: a score to 100, the rest to
+// their type's range.
+func WorkFilterFromProto(f *metav1.WorkFilter) model.WorkFilter {
+	if f == nil {
+		return model.WorkFilter{}
+	}
+
+	var kinds []model.WorkKind
+	for _, k := range f.GetKinds() {
+		if kind := model.WorkKind(k); k > 0 && kind.Valid() {
+			kinds = append(kinds, kind)
+		}
+	}
+
+	return model.WorkFilter{
+		Kinds:              kinds,
+		IMDbID:             f.GetImdbId(),
+		TMDBMovieID:        f.GetTmdbMovieId(),
+		TMDBTVID:           f.GetTmdbTvId(),
+		TVDBID:             f.GetTvdbId(),
+		TVMazeID:           f.GetTvmazeId(),
+		TPDBID:             f.GetTpdbId(),
+		UPC:                f.GetUpc(),
+		Season:             narrow16(f.GetSeason()),
+		Episode:            narrow16(f.GetEpisode()),
+		MinYear:            narrow16(f.GetMinYear()),
+		MaxYear:            narrow16(f.GetMaxYear()),
+		MinIMDbScore:       score(f.GetMinImdbScore()),
+		MinIMDbVotes:       f.GetMinImdbVotes(),
+		MinRTScore:         score(f.GetMinRtScore()),
+		MinMetacriticScore: score(f.GetMinMetacriticScore()),
+		MinRuntime:         narrow16(f.GetMinRuntime()),
+		MaxRuntime:         narrow16(f.GetMaxRuntime()),
+		Performers:         cloneStrings(f.GetPerformers()),
+		LinkedOnly:         f.GetLinkedOnly(),
+	}
+}
+
+// WorkInfoToProto converts a work's description.
+func WorkInfoToProto(w model.WorkInfo) *metav1.WorkInfo {
+	var ratings []*metav1.Rating
+	for _, r := range w.Ratings {
+		ratings = append(ratings, &metav1.Rating{Source: r.Source, Score: uint32(r.Score), Votes: r.Votes})
+	}
+
+	return &metav1.WorkInfo{
+		Kind:           metav1.WorkKind(w.Kind),
+		Title:          w.Title,
+		OriginalTitle:  w.OriginalTitle,
+		Year:           uint32(w.Year),
+		ImdbId:         w.IMDbID,
+		TmdbId:         w.TMDBID,
+		TvdbId:         w.TVDBID,
+		TvmazeId:       w.TVMazeID,
+		TpdbId:         w.TPDBID,
+		Season:         uint32(w.Season),
+		Episode:        uint32(w.Episode),
+		EpisodeTitle:   w.EpisodeTitle,
+		Ratings:        ratings,
+		RuntimeMinutes: uint32(w.RuntimeMinutes),
+		Performers:     cloneStrings(w.Performers),
+		Upc:            w.UPC,
+	}
+}
+
+// WorkInfoFromProto converts a work's description back. A kind this build does not know is
+// WorkUnspecified.
+func WorkInfoFromProto(w *metav1.WorkInfo) model.WorkInfo {
+	if w == nil {
+		return model.WorkInfo{}
+	}
+
+	var ratings []model.Rating
+	for _, r := range w.GetRatings() {
+		ratings = append(ratings, model.Rating{Source: r.GetSource(), Score: score(r.GetScore()), Votes: r.GetVotes()})
+	}
+
+	kind := model.WorkKind(w.GetKind())
+	if w.GetKind() < 0 || !kind.Valid() {
+		kind = model.WorkUnspecified
+	}
+
+	return model.WorkInfo{
+		Kind:           kind,
+		Title:          w.GetTitle(),
+		OriginalTitle:  w.GetOriginalTitle(),
+		Year:           narrow16(w.GetYear()),
+		IMDbID:         w.GetImdbId(),
+		TMDBID:         w.GetTmdbId(),
+		TVDBID:         w.GetTvdbId(),
+		TVMazeID:       w.GetTvmazeId(),
+		TPDBID:         w.GetTpdbId(),
+		Season:         narrow16(w.GetSeason()),
+		Episode:        narrow16(w.GetEpisode()),
+		EpisodeTitle:   w.GetEpisodeTitle(),
+		Ratings:        ratings,
+		RuntimeMinutes: narrow16(w.GetRuntimeMinutes()),
+		Performers:     cloneStrings(w.GetPerformers()),
+		UPC:            w.GetUpc(),
 	}
 }
 
@@ -431,4 +624,14 @@ func cloneStrings(in []string) []string {
 	}
 
 	return append([]string(nil), in...)
+}
+
+// narrow16 clamps a wire number into a uint16.
+func narrow16(n uint32) uint16 {
+	return uint16(min(n, 0xFFFF))
+}
+
+// score clamps a wire score into the 0–100 scale.
+func score(n uint32) uint16 {
+	return uint16(min(n, 100))
 }
