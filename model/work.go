@@ -12,6 +12,8 @@ const (
 	WorkEpisode
 	WorkAdultMovie
 	WorkAdultScene
+	WorkAlbum
+	WorkBook
 
 	workKindCount
 )
@@ -44,7 +46,8 @@ type WorkFilter struct {
 	TPDBID      string
 	UPC         string
 
-	// Season and Episode narrow a series named by an id.
+	// Season keeps a release of that season, packs included; Episode one carrying that
+	// episode.
 	Season  uint16
 	Episode uint16
 
@@ -64,6 +67,15 @@ type WorkFilter struct {
 
 	// LinkedOnly keeps a release linked to any work.
 	LinkedOnly bool
+
+	// Creator is an album's artist or a book's author, matched the way Performers are.
+	Creator string
+
+	// AniDBID, AniListID, MBID and ISBN are more ids, a union with the ones above.
+	AniDBID   uint64
+	AniListID uint64
+	MBID      string
+	ISBN      string
 }
 
 // IsZero reports whether the filter narrows nothing.
@@ -71,12 +83,13 @@ func (f WorkFilter) IsZero() bool {
 	return len(f.Kinds) == 0 && !f.HasIDs() && f.Season == 0 && f.Episode == 0 &&
 		f.MinYear == 0 && f.MaxYear == 0 &&
 		f.MinIMDbScore == 0 && f.MinIMDbVotes == 0 && f.MinRTScore == 0 && f.MinMetacriticScore == 0 &&
-		f.MinRuntime == 0 && f.MaxRuntime == 0 && len(f.Performers) == 0 && !f.LinkedOnly
+		f.MinRuntime == 0 && f.MaxRuntime == 0 && len(f.Performers) == 0 && !f.LinkedOnly && f.Creator == ""
 }
 
 // HasIDs reports whether the filter names works by an id.
 func (f WorkFilter) HasIDs() bool {
-	return f.IMDbID != "" || f.TMDBMovieID != 0 || f.TMDBTVID != 0 || f.TVDBID != 0 || f.TVMazeID != 0 || f.TPDBID != "" || f.UPC != ""
+	return f.IMDbID != "" || f.TMDBMovieID != 0 || f.TMDBTVID != 0 || f.TVDBID != 0 || f.TVMazeID != 0 || f.TPDBID != "" || f.UPC != "" ||
+		f.AniDBID != 0 || f.AniListID != 0 || f.MBID != "" || f.ISBN != ""
 }
 
 // Rating is one source's score of a work, on a 0–100 scale, and how many voted where the
@@ -116,6 +129,30 @@ type WorkInfo struct {
 	Performers []string
 
 	UPC string
+
+	// Creator is an album's artist or a book's author; MBID, ISBN, AniDBID and AniListID an
+	// album's, a book's and an anime's ids; RTID and MCID the critics' page paths.
+	Creator   string
+	MBID      string
+	ISBN      string
+	AniDBID   uint64
+	AniListID uint64
+	RTID      string
+	MCID      string
+}
+
+// MediaInfo is what a release's video header says. Zero and empty are unknown.
+type MediaInfo struct {
+	Container  string
+	VideoCodec string
+	Width      uint16
+	Height     uint16
+
+	DurationSeconds uint32
+
+	AudioCodecs       []string
+	AudioLanguages    []string
+	SubtitleLanguages []string
 }
 
 // EnhancedSearchQuery is a plain search narrowed by the work.
@@ -124,9 +161,10 @@ type EnhancedSearchQuery struct {
 	Work   WorkFilter
 }
 
-// EnhancedSearchResult is a plain search's answer with the works described, keyed by the
-// entries' CatalogID. A release with no work is absent.
+// EnhancedSearchResult is a plain search's answer with the works and the videos described,
+// keyed by the entries' CatalogID. A release with no work, or no read video, is absent.
 type EnhancedSearchResult struct {
 	Result SearchResult
 	Works  map[string]WorkInfo
+	Media  map[string]MediaInfo
 }

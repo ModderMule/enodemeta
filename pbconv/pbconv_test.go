@@ -278,6 +278,11 @@ func TestEnhancedSearchRoundTrip(t *testing.T) {
 		Result: model.SearchResult{Total: 1, TotalExact: true, Window: 1000},
 		Works: map[string]model.WorkInfo{
 			"nzb:AB12": {Kind: model.WorkAdultMovie, Title: "Gang Bang Angels 4", Year: 1999, RuntimeMinutes: 90, UPC: "618582602743", Performers: []string{"Chennin Blanc"}},
+			"nzb:CD34": {Kind: model.WorkAlbum, Title: "Random Access Memories", Year: 2013, Creator: "Daft Punk", MBID: "aa997ea0-2936-40bd-884d-3af8a0e064dc"},
+		},
+		Media: map[string]model.MediaInfo{
+			"nzb:AB12": {Container: "mkv", VideoCodec: "HEVC", Width: 3840, Height: 1600, DurationSeconds: 9350,
+				AudioCodecs: []string{"TrueHD"}, AudioLanguages: []string{"eng"}, SubtitleLanguages: []string{"eng", "ger"}},
 		},
 	}
 	t.Logf("input:  %+v", result)
@@ -295,6 +300,22 @@ func TestEnhancedSearchRoundTrip(t *testing.T) {
 	if !zero.IsZero() {
 		t.Errorf("a zero filter came back as %+v", zero)
 	}
+}
+
+// TestMediaInfoRoundTripLosesNothing fills every field of a video's description by reflection
+// and converts both ways.
+func TestMediaInfoRoundTripLosesNothing(t *testing.T) {
+	var info model.MediaInfo
+	fillStruct(t, reflect.ValueOf(&info).Elem())
+
+	info.AudioCodecs, info.AudioLanguages, info.SubtitleLanguages = []string{"AAC"}, []string{"eng"}, []string{"fre"}
+
+	t.Logf("input:  %+v", info)
+
+	back := MediaInfoFromProto(MediaInfoToProto(info))
+	t.Logf("output: %+v", back)
+
+	compareFields(t, info, back)
 }
 
 // TestWorkFilterFromProtoGuardsNarrowing: a kind from a newer peer is dropped, a score past

@@ -280,11 +280,16 @@ list still defers is protobuf, not XML.
 
 ## The enhanced search
 
-`MetaIngest.SearchEnhanced` (ingest contract, amendment 15) is the optional search by
-the work a release is linked to. `model.EnhancedSearchQuery` is a `SearchQuery` and a
-`WorkFilter` (kinds, ids, season and episode, year, IMDb / Rotten Tomatoes / Metacritic
-floors on a 0–100 scale, runtime in minutes, performers); `model.EnhancedSearchResult`
-is a `SearchResult` and a `WorkInfo` per `catalog_id`. `pbconv` converts both, clamping
+`MetaIngest.SearchEnhanced` (ingest contract, amendments 15 and 16) is the optional
+search by the work a release is linked to.
+
+- `model.EnhancedSearchQuery` is a `SearchQuery` and a `WorkFilter`: kinds (films,
+  series, episodes, adult films and scenes, albums, books); ids (IMDb, TMDB, TheTVDB,
+  TVMaze, ThePornDB, UPC, AniDB, AniList, MusicBrainz, ISBN); season and episode; year;
+  IMDb, Rotten Tomatoes and Metacritic floors on a 0–100 scale; runtime in minutes;
+  performers; and an artist or author.
+- `model.EnhancedSearchResult` is a `SearchResult`, a `WorkInfo` per `catalog_id`, and a
+  `MediaInfo` per `catalog_id` for the releases whose video header was read. `pbconv` converts both, clamping
 what a newer peer might send (a score past 100, an unknown kind). A daemon advertises it
 in `GetInfoResponse.enhanced_search_available` and otherwise answers `Unimplemented`:
 usenet-crawler serves it behind `ingest.enhanced_search` (default off); torrent-crawler,

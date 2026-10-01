@@ -18,6 +18,9 @@ func TestWorkFilterIsZero(t *testing.T) {
 		{"a runtime ceiling", WorkFilter{MaxRuntime: 45}, false},
 		{"a performer", WorkFilter{Performers: []string{"Chennin Blanc"}}, false},
 		{"linked only", WorkFilter{LinkedOnly: true}, false},
+		{"an artist", WorkFilter{Creator: "Daft Punk"}, false},
+		{"an AniDB id", WorkFilter{AniDBID: 14758}, false},
+		{"an ISBN", WorkFilter{ISBN: "9780547928227"}, false},
 	} {
 		t.Logf("input:  %s %+v", c.name, c.filter)
 		t.Logf("output: zero %v, ids %v", c.filter.IsZero(), c.filter.HasIDs())
@@ -28,10 +31,10 @@ func TestWorkFilterIsZero(t *testing.T) {
 	}
 }
 
-// TestWorkKindValid: the five kinds are valid, unspecified and past the last are not.
+// TestWorkKindValid: the seven kinds are valid, unspecified and past the last are not.
 func TestWorkKindValid(t *testing.T) {
 	for kind := WorkKind(0); kind <= workKindCount; kind++ {
-		want := kind >= WorkMovie && kind <= WorkAdultScene
+		want := kind >= WorkMovie && kind <= WorkBook
 
 		t.Logf("input:  %d; output: %v", kind, kind.Valid())
 

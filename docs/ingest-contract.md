@@ -481,3 +481,27 @@ additions below are about meaning rather than about wire format.
     - **`MetaEntry` and the feed are unchanged**, so neither the eD2K
       pseudo-hash nor the `FT_META_*` tags move. `MetaApi` does not expose the
       call yet; eNode-go would add it the same way, behind the same flag.
+
+16. **Music, books, anime and a release's video, in `SearchEnhanced`.** Additive,
+    so a peer built against amendment 15 reads everything it did.
+
+    - **Kinds and filters.** `WorkKind` gains `WORK_KIND_ALBUM` (6) and
+      `WORK_KIND_BOOK` (7). `WorkFilter` gains:
+      - `creator` (21), an album's artist or a book's author, matched the way
+        `performers` are;
+      - `anidb_id` (22), `anilist_id` (23), `mbid` (24, a MusicBrainz
+        release-group id) and `isbn` (25, an ISBN-13), which join the union of
+        ids.
+    - **`season` and `episode` changed meaning** (fields 9 and 10, same
+      numbers). They no longer narrow a series named by an id to its episodes.
+      They now keep a release of that season, its season packs included, or one
+      that carries that episode, whatever the release is linked to. A pack
+      linked only to its series was lost before.
+    - **`WorkInfo`** gains `creator` (17), `mbid` (18), `isbn` (19),
+      `anidb_id` (20), `anilist_id` (21), and the Rotten Tomatoes and
+      Metacritic page paths `rt_id` (22) and `mc_id` (23).
+    - **`EnhancedSearchResponse.media`** (3) is a `MediaInfo` per `catalog_id`
+      for the releases whose video header the daemon read: container, video
+      codec and picture size, length in seconds, and per track the audio codecs
+      and languages and the subtitle languages. A release with none is absent.
+    - torrent-crawler still answers `Unimplemented`.

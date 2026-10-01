@@ -362,9 +362,19 @@ func EnhancedSearchResultToProto(res model.EnhancedSearchResult) *metav1.Enhance
 		}
 	}
 
+	var media map[string]*metav1.MediaInfo
+
+	if len(res.Media) > 0 {
+		media = make(map[string]*metav1.MediaInfo, len(res.Media))
+		for id, info := range res.Media {
+			media[id] = MediaInfoToProto(info)
+		}
+	}
+
 	return &metav1.EnhancedSearchResponse{
 		Result: SearchResultToProto(res.Result),
 		Works:  works,
+		Media:  media,
 	}
 }
 
@@ -380,6 +390,13 @@ func EnhancedSearchResultFromProto(res *metav1.EnhancedSearchResponse) model.Enh
 		out.Works = make(map[string]model.WorkInfo, len(res.GetWorks()))
 		for id, info := range res.GetWorks() {
 			out.Works[id] = WorkInfoFromProto(info)
+		}
+	}
+
+	if len(res.GetMedia()) > 0 {
+		out.Media = make(map[string]model.MediaInfo, len(res.GetMedia()))
+		for id, info := range res.GetMedia() {
+			out.Media[id] = MediaInfoFromProto(info)
 		}
 	}
 
@@ -414,6 +431,11 @@ func WorkFilterToProto(f model.WorkFilter) *metav1.WorkFilter {
 		MaxRuntime:         uint32(f.MaxRuntime),
 		Performers:         cloneStrings(f.Performers),
 		LinkedOnly:         f.LinkedOnly,
+		Creator:            f.Creator,
+		AnidbId:            f.AniDBID,
+		AnilistId:          f.AniListID,
+		Mbid:               f.MBID,
+		Isbn:               f.ISBN,
 	}
 }
 
@@ -453,6 +475,11 @@ func WorkFilterFromProto(f *metav1.WorkFilter) model.WorkFilter {
 		MaxRuntime:         narrow16(f.GetMaxRuntime()),
 		Performers:         cloneStrings(f.GetPerformers()),
 		LinkedOnly:         f.GetLinkedOnly(),
+		Creator:            f.GetCreator(),
+		AniDBID:            f.GetAnidbId(),
+		AniListID:          f.GetAnilistId(),
+		MBID:               f.GetMbid(),
+		ISBN:               f.GetIsbn(),
 	}
 }
 
@@ -480,6 +507,13 @@ func WorkInfoToProto(w model.WorkInfo) *metav1.WorkInfo {
 		RuntimeMinutes: uint32(w.RuntimeMinutes),
 		Performers:     cloneStrings(w.Performers),
 		Upc:            w.UPC,
+		Creator:        w.Creator,
+		Mbid:           w.MBID,
+		Isbn:           w.ISBN,
+		AnidbId:        w.AniDBID,
+		AnilistId:      w.AniListID,
+		RtId:           w.RTID,
+		McId:           w.MCID,
 	}
 }
 
@@ -517,6 +551,46 @@ func WorkInfoFromProto(w *metav1.WorkInfo) model.WorkInfo {
 		RuntimeMinutes: narrow16(w.GetRuntimeMinutes()),
 		Performers:     cloneStrings(w.GetPerformers()),
 		UPC:            w.GetUpc(),
+		Creator:        w.GetCreator(),
+		MBID:           w.GetMbid(),
+		ISBN:           w.GetIsbn(),
+		AniDBID:        w.GetAnidbId(),
+		AniListID:      w.GetAnilistId(),
+		RTID:           w.GetRtId(),
+		MCID:           w.GetMcId(),
+	}
+}
+
+// MediaInfoToProto converts a release's video description.
+func MediaInfoToProto(m model.MediaInfo) *metav1.MediaInfo {
+	return &metav1.MediaInfo{
+		Container:         m.Container,
+		VideoCodec:        m.VideoCodec,
+		Width:             uint32(m.Width),
+		Height:            uint32(m.Height),
+		DurationSeconds:   m.DurationSeconds,
+		AudioCodecs:       cloneStrings(m.AudioCodecs),
+		AudioLanguages:    cloneStrings(m.AudioLanguages),
+		SubtitleLanguages: cloneStrings(m.SubtitleLanguages),
+	}
+}
+
+// MediaInfoFromProto converts a release's video description back, a picture size past what
+// the model holds clamped.
+func MediaInfoFromProto(m *metav1.MediaInfo) model.MediaInfo {
+	if m == nil {
+		return model.MediaInfo{}
+	}
+
+	return model.MediaInfo{
+		Container:         m.GetContainer(),
+		VideoCodec:        m.GetVideoCodec(),
+		Width:             narrow16(m.GetWidth()),
+		Height:            narrow16(m.GetHeight()),
+		DurationSeconds:   m.GetDurationSeconds(),
+		AudioCodecs:       cloneStrings(m.GetAudioCodecs()),
+		AudioLanguages:    cloneStrings(m.GetAudioLanguages()),
+		SubtitleLanguages: cloneStrings(m.GetSubtitleLanguages()),
 	}
 }
 

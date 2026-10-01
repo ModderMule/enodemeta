@@ -267,6 +267,8 @@ enum WorkKind {
   WORK_KIND_EPISODE = 3;
   WORK_KIND_ADULT_MOVIE = 4;
   WORK_KIND_ADULT_SCENE = 5;
+  WORK_KIND_ALBUM = 6;
+  WORK_KIND_BOOK = 7;
 }
 
 // WorkFilter narrows an enhanced search to releases by their linked work. Every
@@ -289,8 +291,8 @@ message WorkFilter {
   string tpdb_id = 7;   // ThePornDB's uuid
   string upc = 8;       // an adult DVD's barcode
 
-  // season and episode narrow a series named by an id to one season, or one
-  // episode of it.
+  // season keeps a release of that season, season packs included; episode one
+  // that carries that episode, which a pack does not.
   uint32 season = 9;
   uint32 episode = 10;
 
@@ -317,6 +319,17 @@ message WorkFilter {
 
   // linked_only keeps a release linked to any work.
   bool linked_only = 20;
+
+  // creator keeps a release whose album's artist or book's author is this,
+  // matched the way performers are.
+  string creator = 21;
+
+  // More ids, a union with the ones above: an anime's AniDB and AniList ids,
+  // an album's MusicBrainz release-group id, a book's ISBN-13.
+  uint64 anidb_id = 22;
+  uint64 anilist_id = 23;
+  string mbid = 24;
+  string isbn = 25;
 }
 
 // Rating is one source's score of a work.
@@ -361,6 +374,33 @@ message WorkInfo {
 
   // upc is an adult DVD's barcode.
   string upc = 16;
+
+  // creator is an album's artist or a book's author; mbid, isbn, anidb_id and
+  // anilist_id an album's, a book's and an anime's ids.
+  string creator = 17;
+  string mbid = 18;
+  string isbn = 19;
+  uint64 anidb_id = 20;
+  uint64 anilist_id = 21;
+
+  // rt_id and mc_id are the work's Rotten Tomatoes ("m/the_matrix") and
+  // Metacritic ("movie/the-matrix") page paths.
+  string rt_id = 22;
+  string mc_id = 23;
+}
+
+// MediaInfo is what a release's video header says: its container, video
+// codec and picture size, its length, and per track its audio codecs and
+// languages and its subtitle languages. Zero and empty are unknown.
+message MediaInfo {
+  string container = 1;
+  string video_codec = 2;
+  uint32 width = 3;
+  uint32 height = 4;
+  uint32 duration_seconds = 5;
+  repeated string audio_codecs = 6;
+  repeated string audio_languages = 7;
+  repeated string subtitle_languages = 8;
 }
 
 // EnhancedSearchRequest is a plain search narrowed by the work.
@@ -377,4 +417,8 @@ message EnhancedSearchResponse {
   // entries' catalog_id: a release is several entries, and they share it. A
   // release with no work is absent.
   map<string, WorkInfo> works = 2;
+
+  // media describes the video of each release whose header the daemon read,
+  // keyed the same way. A release with none is absent.
+  map<string, MediaInfo> media = 3;
 }
