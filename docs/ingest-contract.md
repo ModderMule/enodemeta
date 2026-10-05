@@ -544,11 +544,14 @@ additions below are about meaning rather than about wire format.
     - **`seeders` and `peers` are a third unit** (amendment 9). `peers` is the
       sources the network reported for the file and `seeders` the complete
       ones. They are what a Kad search result shows, and the same rule holds:
-      never summed or averaged across daemons. **Open:** whether
-      `tags.MaxSources` (99) caps them. The cap keeps a row out of eMule's spam
-      heuristic, which fires above 100 sources when no non-spam server
-      answered; a popular Kad file really has more, so capping trades a true
-      count for staying out of it. Nothing enforces either answer yet.
+      never summed or averaged across daemons. **The daemon caps them, and the
+      cap is the operator's**: kademlia-crawler's `catalog.max_sources`
+      defaults to `tags.MaxSources` (99) and 0 advertises the true count. The
+      cap keeps a row out of eMule's source-count spam heuristic, which needs
+      more than 100 sources on a result that one UDP server alone returned; a
+      popular Kad file really has more, so capping trades a true count for
+      staying out of it. kademlia-crawler's `docs/emule-spam.md` has the
+      conditions.
     - **Filters follow amendment 14's ignore rule.** A Kad daemon answers
       `min_seeders` against complete sources and drops the torrent- and
       Usenet-only ones.
