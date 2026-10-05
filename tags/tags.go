@@ -141,8 +141,10 @@ const (
 // Capability bits (§5.1, §5.2).
 const (
 	// SrvCapMetaSearch is the client's bit in the CT_SERVER_FLAGS login tag,
-	// saying it can act on a meta row. 0x1000 is already eMuleQt's IPv6 bit.
-	SrvCapMetaSearch = 0x2000
+	// saying it can act on a meta row. It has the same value as FlagMetaSearch.
+	// 0x1000 is Lugdunum eserver's NAT-traversal bit and 0x2000 is NeoLoader's
+	// IPv6 bit, so both are left alone.
+	SrvCapMetaSearch = 0x10000
 
 	// FlagMetaSearch is the server's bit in its own flags word, saying it
 	// serves a catalogue. eNode-go's own flags stop at 0x8000.
