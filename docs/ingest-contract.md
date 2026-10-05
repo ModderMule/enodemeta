@@ -555,7 +555,34 @@ additions below are about meaning rather than about wire format.
     - **Filters follow amendment 14's ignore rule.** A Kad daemon answers
       `min_seeders` against complete sources and drops the torrent- and
       Usenet-only ones.
-    - **eNode-go and eMuleQt are not changed by this amendment.** Until they
-      are, proto3's open enums carry the new values through as numbers: a
-      server that does not know kind 4 fails `KindFromProto` to unspecified and
-      drops the row, which is the safe side.
+    - **A server that predates this amendment is not harmed by it.** proto3's
+      open enums carry the new values through as numbers: a server that does
+      not know kind 4 fails `KindFromProto` to unspecified and drops the row,
+      which is the safe side. Amendment 18 is what eNode-go and eMuleQt do
+      with the row.
+
+18. **A native row is marked on the wire by one tag, `FT_META_NETWORK`
+    (0x6D).** It is a uint8 holding a `MetaNetwork` value, and
+    `META_NETWORK_KAD` (3, `tags.MetaNetworkKad`) is the only one in use. This
+    is a tag number, not a proto change.
+
+    - **It is the row's only meta tag.** The server sends an ED2K row as an
+      ordinary search result — the real MD4, no source address, the classic
+      name, size, type and source tags — plus this one. `FT_META_KIND` is
+      **not** sent: a client that knows the meta rows drops a row whose kind
+      tag its hash cannot back, so a kind tag on a real MD4 would make the
+      file vanish for every client already in the field.
+    - **The tag, not the name, is how a client knows.** The server may prefix
+      the name (`[kad] `, the operator's choice, and it may be empty) for the
+      clients that do not read the tag. A client that does read it shows the
+      network its own way and drops a leading `[kad …]` bracket, and only
+      then: a file that is merely named that way keeps its name.
+    - **A client that does not know the tag has an ordinary file.** Both eMule
+      trees keep an unknown numeric tag of a known type and ignore it, and a
+      uint8 is a type both parse.
+    - **The server's own file wins.** When the hash is one a user shares on
+      the server, the server sends that row alone, with its real sources and
+      without the tag or the prefix.
+    - **Every client gets these rows.** The capability bits of plan §5 gate
+      pseudo-hash rows, which a stock client cannot act on. A native row it
+      can simply download.

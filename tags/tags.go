@@ -22,7 +22,8 @@ package tags
 // The meta tags carried on a search row (§4). Every one of these is a numeric
 // name id, because eNode-go's tag encoder writes only those.
 const (
-	// FTMetaKind is 1 = bt-v1 or hybrid, 2 = bt-v2, 3 = nzb.
+	// FTMetaKind is 1 = bt-v1 or hybrid, 2 = bt-v2, 3 = nzb. A native row
+	// (kind 4, a real eD2K file) never carries it: see FTMetaNetwork.
 	//
 	// This tag, not the hash's kind nibble, is authoritative. A real MD4 looks
 	// like a meta hash about once in a million files, so a client that switched
@@ -74,7 +75,22 @@ const (
 	// FTMetaMagnet is a BitTorrent magnet URI. A row carrying one needs no API
 	// call at all: the client can hand it straight to its engine.
 	FTMetaMagnet = 0x6C
+
+	// FTMetaNetwork marks a native row — a real eD2K file with its own MD4 in
+	// the hash slot — with the network its catalogue found it on. It is a uint8
+	// holding a MetaNetwork value, and MetaNetworkKad is the only one in use.
+	//
+	// It is the row's only meta tag. A native row must not carry FTMetaKind:
+	// a client that knows the meta rows drops a row whose kind tag its hash
+	// cannot back, and this row's hash is no meta hash. A client that does not
+	// know FTMetaNetwork keeps it as an unknown tag and has an ordinary file.
+	FTMetaNetwork = 0x6D
 )
+
+// MetaNetworkKad is FTMetaNetwork's value for a file found on the eMule Kad
+// network. It is META_NETWORK_KAD of the proto, restated so that a client with
+// no generated code has the number.
+const MetaNetworkKad = 3
 
 // MetaTagRangeStart and MetaTagRangeEnd bound the range reserved for this
 // feature. A test asserts that nothing this project emits falls outside it.

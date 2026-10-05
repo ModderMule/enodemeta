@@ -22,6 +22,7 @@ func TestMetaTagsStayInRange(t *testing.T) {
 		"FTMetaIndexer":   FTMetaIndexer,
 		"FTMetaFlags":     FTMetaFlags,
 		"FTMetaMagnet":    FTMetaMagnet,
+		"FTMetaNetwork":   FTMetaNetwork,
 	}
 
 	seen := make(map[int]string, len(tags))
