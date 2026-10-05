@@ -604,6 +604,9 @@ additions below are about meaning rather than about wire format.
       never lists ED2K. The client builds the eD2K link with `ed2klink.Build`.
     - **The name is the file's own.** The `[kad] ` prefix of amendment 18
       belongs to the eD2K search result and is not put on an API row.
-    - **Nothing is merged with the eD2K search.** A file the server itself
-      holds can come back from both; the "server's own file wins" rule of
-      amendment 18 is the eD2K path's.
+    - **The server's own file wins here too, by rewriting the entry.** When a
+      connected user shares a file with the same hash and size, the entry
+      carries the server's `name`, and its own source counts as `peers` and
+      `seeders`. It is not dropped as amendment 18 drops the eD2K row: this
+      search has no row of the server's to send instead. The entry keeps its
+      place, so paging and `total` are the daemon's.
