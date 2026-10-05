@@ -43,6 +43,9 @@ type MintInput struct {
 func Mint(in MintInput) (Hash, error) {
 	var h Hash
 
+	if in.Kind.Native() {
+		return h, fmt.Errorf("%w: %s", ErrNativeKind, in.Kind)
+	}
 	if !in.Kind.Valid() {
 		return h, fmt.Errorf("%w: %d", ErrKind, uint8(in.Kind))
 	}

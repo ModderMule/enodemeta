@@ -73,6 +73,11 @@ const (
 	KindBTV1        Kind = 1 // BitTorrent v1 or hybrid; identity is the 20-byte v1 infohash
 	KindBTV2        Kind = 2 // BitTorrent v2 only; identity is the 32-byte v2 infohash
 	KindNZB         Kind = 3 // Usenet; identity is the 32-byte canonical NZB digest (§3.4)
+
+	// KindED2K is an eD2K/Kad file. Its identity is the 16-byte MD4 file hash,
+	// which already belongs in the hash slot, so it is the one kind that never
+	// gets a meta hash: see Native.
+	KindED2K Kind = 4
 )
 
 // String names the kind.
@@ -84,6 +89,8 @@ func (k Kind) String() string {
 		return "bt-v2"
 	case KindNZB:
 		return "nzb"
+	case KindED2K:
+		return "ed2k"
 	default:
 		return fmt.Sprintf("kind(%d)", uint8(k))
 	}
@@ -91,7 +98,25 @@ func (k Kind) String() string {
 
 // Valid reports whether the kind is one this version defines.
 func (k Kind) Valid() bool {
-	return k == KindBTV1 || k == KindBTV2 || k == KindNZB
+	return k == KindBTV1 || k == KindBTV2 || k == KindNZB || k == KindED2K
+}
+
+// Native reports whether a row of this kind is a real eD2K file, whose hash
+// slot holds the file's own MD4 rather than a pseudo-hash.
+//
+// A native row is everything §3.7 says a meta hash is not: it can be checked
+// against file content, published to Kad and used as a transfer id. Minting one
+// would replace a hash every eD2K client already understands with one that
+// only a capable client can read.
+func (k Kind) Native() bool {
+	return k == KindED2K
+}
+
+// Mintable reports whether Build can make a meta hash for this kind: it is
+// defined and not native. It is also the set of kinds a hash's kind nibble may
+// carry, so Parse uses the same test.
+func (k Kind) Mintable() bool {
+	return k.Valid() && !k.Native()
 }
 
 // IdentityLen is the exact length of the identity a kind folds, in bytes.
@@ -101,6 +126,8 @@ func (k Kind) IdentityLen() int {
 		return 20
 	case KindBTV2, KindNZB:
 		return 32
+	case KindED2K:
+		return 16
 	default:
 		return 0
 	}
@@ -162,6 +189,7 @@ var (
 	ErrMagic           = errors.New("metahash: wrong magic")
 	ErrVersion         = errors.New("metahash: unknown scheme version")
 	ErrKind            = errors.New("metahash: unknown kind")
+	ErrNativeKind      = errors.New("metahash: a native kind has a real file hash and no meta hash")
 	ErrReservedFlag    = errors.New("metahash: reserved flag is set")
 	ErrIdentityLength  = errors.New("metahash: identity has the wrong length for its kind")
 	ErrFileIndex       = errors.New("metahash: file index collides with the whole-set marker")
@@ -232,6 +260,9 @@ func Fold10(d []byte) [DigestSize]byte {
 func Build(kind Kind, flags Flags, fileIndex uint32, identity []byte) (Hash, error) {
 	var h Hash
 
+	if kind.Native() {
+		return h, fmt.Errorf("%w: %s", ErrNativeKind, kind)
+	}
 	if !kind.Valid() {
 		return h, fmt.Errorf("%w: %d", ErrKind, uint8(kind))
 	}
@@ -281,8 +312,10 @@ func Parse(b []byte) (Parsed, error) {
 		return p, fmt.Errorf("%w: %d", ErrVersion, b[2])
 	}
 
+	// A native kind in the nibble is as unknown as an undefined one: no hash is
+	// ever minted for it, so this is a real MD4 or a broken server.
 	kind := Kind(b[3] >> 4)
-	if !kind.Valid() {
+	if !kind.Mintable() {
 		return p, fmt.Errorf("%w: %d", ErrKind, uint8(kind))
 	}
 

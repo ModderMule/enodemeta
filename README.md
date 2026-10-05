@@ -1,10 +1,10 @@
 # enodemeta
 
 The shared contract between the eNode-go server, its catalogue daemons
-(torrent-crawler, usenet-crawler) and the eMuleQt client: the `enode.meta.v1`
+(torrent-crawler, usenet-crawler, kademlia-crawler) and the eMuleQt client: the `enode.meta.v1`
 protobuf service `MetaIngest`, its generated connect-go code, and the code that
 has to produce identical bytes in every repository — the eD2K pseudo-hash, the
-`bt:`/`nzb:` ids, the `FT_META_*` tag ids, and torrent/NZB identity parsing.
+`ed2k:`/`bt:`/`nzb:` ids, the `FT_META_*` tag ids, and torrent/NZB identity parsing.
 
 Module path: `github.com/ModderMule/enodemeta` (Go ≥ 1.25). Its only dependencies
 are `google.golang.org/protobuf` and `connectrpc.com/connect/v2`.
@@ -15,6 +15,7 @@ are `google.golang.org/protobuf` and `connectrpc.com/connect/v2`.
 |---|---|
 | torrent-crawler | `replace github.com/ModderMule/enodemeta => ../enodemeta` (clone side by side) |
 | usenet-crawler | `replace github.com/ModderMule/enodemeta => ../enodemeta` (clone side by side) |
+| kademlia-crawler | `replace github.com/ModderMule/enodemeta => ../enodemeta` (clone side by side) |
 | eNode-go | git submodule at `./enodemeta`, `replace ... => ./enodemeta` |
 | eMuleQt | generates C++ from `proto/`, ports `metahash` and `btid` by hand against `testdata/` |
 
@@ -28,7 +29,7 @@ descriptor is registered twice.
 |---|---|
 | `proto/`, `gen/` | The `.proto` files and the generated protobuf + connect code (checked in) |
 | `metahash/` | The eD2K pseudo-hash: minting, parsing, cross-checking |
-| `btid/`, `magnet/` | The `bt:v1:`/`bt:v2:`/`nzb:` id namespace; magnet links |
+| `btid/`, `magnet/`, `ed2klink/` | The `ed2k:`/`bt:v1:`/`bt:v2:`/`nzb:` id namespace; magnet and eD2K links |
 | `model/`, `pbconv/` | Domain types without protobuf, and the conversions at the edge |
 | `tags/`, `filetype/` | `FT_META_*` tag ids and flags; extension → eD2K file type |
 | `bencode/`, `torrentmeta/`, `nzbmeta/` | Metafile parsing and identity |

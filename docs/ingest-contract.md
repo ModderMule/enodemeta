@@ -505,3 +505,54 @@ additions below are about meaning rather than about wire format.
       codec and picture size, length in seconds, and per track the audio codecs
       and languages and the subtitle languages. A release with none is absent.
     - torrent-crawler still answers `Unimplemented`.
+
+17. **A fourth kind, `META_KIND_ED2K` (4), and a third network,
+    `META_NETWORK_KAD` (3).** They arrived with kademlia-crawler, which
+    catalogues what the eMule Kad network publishes. Unlike amendments 8 to 12
+    this one is a proto change, and it is the first kind that is not a
+    pseudo-hash at all.
+
+    - **An ED2K row is native.** Its `identity` is the file's 16-byte MD4, and
+      that hash already belongs in the slot the pseudo-hash was invented to
+      fill. So it is **not minted**: `model.Entry.Mint` copies `identity` into
+      `meta_hash`, and `metahash.Build`, `Mint` and `Parse` refuse the kind
+      (`ErrNativeKind`, and `ErrKind` for a hash whose kind nibble says 4).
+      `Kind.Native()` and `Kind.Mintable()` are the two tests; `Kind.Valid()`
+      still means "defined". The hash layout, the fold and
+      `testdata/meta-hash-vectors.json` are untouched, so a C++ port has
+      nothing to reproduce.
+    - **The four nevers do not apply to it.** An ED2K row *is* a file hash: it
+      may be searched for on Kad, used as a transfer id and written to
+      `known.met`. `RejectOfferedFile` does not match it, which is correct — a
+      client that has the file may offer it.
+    - **One real hash in about a million carries the meta-hash marker by
+      chance** (plan §3.3). Published as a native row it would read as a
+      torrent or an NZB to every capable client, so `Validate` refuses it and
+      the daemon skips that file.
+    - **A row is one file.** `file_index` is 0, `file_count` is 1 (or unset),
+      `total_size` equals `size` (or is unset), and there is no whole-set row.
+      `path_authoritative`, `magnet` and the torrent and Usenet flags
+      (`MagnetOnly`, `PrivateTracker`, `V2Available`, `NeedsPAR2`) are refused.
+    - **`catalog_id` is `ed2k:<32 uppercase hex>`**, `btid.ED2K(hash)`: the
+      namespace `btid` already parsed. Like amendment 8's it is recomputable,
+      so two daemons' rows for one file collapse.
+    - **There is no metafile.** `FetchMetaFile` answers `NotFound` for the
+      kind and `enodemeta.IdentityOf` returns `ErrNoMetaFile`. The complete
+      instruction for a client is the eD2K link, which `ed2klink.Build` makes
+      from the row's own `name`, `size` and `identity`; it is not carried on
+      the row.
+    - **`seeders` and `peers` are a third unit** (amendment 9). `peers` is the
+      sources the network reported for the file and `seeders` the complete
+      ones. They are what a Kad search result shows, and the same rule holds:
+      never summed or averaged across daemons. **Open:** whether
+      `tags.MaxSources` (99) caps them. The cap keeps a row out of eMule's spam
+      heuristic, which fires above 100 sources when no non-spam server
+      answered; a popular Kad file really has more, so capping trades a true
+      count for staying out of it. Nothing enforces either answer yet.
+    - **Filters follow amendment 14's ignore rule.** A Kad daemon answers
+      `min_seeders` against complete sources and drops the torrent- and
+      Usenet-only ones.
+    - **eNode-go and eMuleQt are not changed by this amendment.** Until they
+      are, proto3's open enums carry the new values through as numbers: a
+      server that does not know kind 4 fails `KindFromProto` to unspecified and
+      drops the row, which is the safe side.

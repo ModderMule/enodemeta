@@ -266,3 +266,106 @@ func TestSortRanked(t *testing.T) {
 		}
 	}
 }
+
+// validED2KEntry is the Kad shape: the file's own MD4 as identity, an ed2k:
+// catalogue id, one file and nothing a metafile-backed release carries.
+func validED2KEntry() Entry {
+	identity := make([]byte, 16)
+	for i := range identity {
+		identity[i] = byte(0xA0 + i)
+	}
+
+	return Entry{
+		Kind:      metahash.KindED2K,
+		Identity:  identity,
+		Name:      "Some.Release.2026.1080p.mkv",
+		CatalogID: "ed2k:A0A1A2A3A4A5A6A7A8A9AAABACADAEAF",
+		FileIndex: 0,
+		FileCount: 1,
+		Size:      700 << 20,
+		TotalSize: 700 << 20,
+		Type:      "Video",
+		Seeders:   3,
+		Peers:     12,
+	}
+}
+
+// TestValidateED2K pins the rules a native row adds. Each rejected case is a
+// field a daemon would carry over by copying the torrent row builder.
+func TestValidateED2K(t *testing.T) {
+	entry := validED2KEntry()
+	t.Logf("input:  %s %q", entry.Kind, entry.Name)
+
+	if err := entry.Validate(); err != nil {
+		t.Fatalf("a well-formed ed2k entry must validate: %v", err)
+	}
+	t.Logf("output: accepted")
+
+	for _, c := range []struct {
+		label  string
+		mutate func(e *Entry)
+	}{
+		{"a torrent-length identity", func(e *Entry) { e.Identity = make([]byte, 20) }},
+		{"a hash that reads as a meta hash", func(e *Entry) {
+			e.Identity = []byte{0xED, 0x2B, 0x01, 0x10, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+		}},
+		{"a second file", func(e *Entry) { e.FileIndex = 1; e.FileCount = 2 }},
+		{"a multi-file release", func(e *Entry) { e.FileCount = 2 }},
+		{"a whole-set row", func(e *Entry) { e.FileIndex = metahash.FileIndexWholeSet32 }},
+		{"an authoritative path", func(e *Entry) { e.PathAuthoritative = true }},
+		{"a total size that is not its size", func(e *Entry) { e.TotalSize = e.Size + 1 }},
+		{"a magnet", func(e *Entry) { e.Magnet = "magnet:?xt=urn:btih:00" }},
+		{"the magnet-only flag", func(e *Entry) { e.Flags = FlagMagnetOnly }},
+		{"the PAR2 flag", func(e *Entry) { e.Flags = FlagNeedsPAR2 }},
+	} {
+		t.Run(c.label, func(t *testing.T) {
+			entry := validED2KEntry()
+			c.mutate(&entry)
+			t.Logf("input:  %+v", entry)
+
+			err := entry.Validate()
+			t.Logf("output: %v", err)
+
+			if !errors.Is(err, ErrInvalidEntry) {
+				t.Errorf("%s: got %v, want it to wrap %v", c.label, err, ErrInvalidEntry)
+			}
+			if mintErr := entry.Mint(); mintErr == nil {
+				t.Errorf("%s: Mint must refuse what Validate refuses", c.label)
+			}
+		})
+	}
+}
+
+// TestMintED2K pins that a native row's hash is its identity, untouched: the
+// hash slot of an eD2K result holds the file's MD4 and nothing else.
+func TestMintED2K(t *testing.T) {
+	entry := validED2KEntry()
+	t.Logf("input:  identity %X", entry.Identity)
+
+	if err := entry.Mint(); err != nil {
+		t.Fatalf("Mint: %v", err)
+	}
+	t.Logf("output: meta hash %X", entry.MetaHash)
+
+	if string(entry.MetaHash) != string(entry.Identity) {
+		t.Errorf("got %X, want the identity %X", entry.MetaHash, entry.Identity)
+	}
+	if metahash.IsMetaHash(entry.MetaHash) {
+		t.Errorf("a native row's hash must not read as a meta hash")
+	}
+
+	// The hash is a copy: a caller that reuses its identity buffer must not
+	// rewrite a row it already minted.
+	entry.Identity[0] ^= 0xFF
+	if entry.MetaHash[0] == entry.Identity[0] {
+		t.Errorf("MetaHash aliases Identity")
+	}
+
+	// A zero total size means "not stated" and is accepted.
+	loose := validED2KEntry()
+	loose.TotalSize = 0
+	loose.FileCount = 0
+	if err := loose.Validate(); err != nil {
+		t.Errorf("an ed2k row without total size or file count must validate: %v", err)
+	}
+}

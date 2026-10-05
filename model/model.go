@@ -81,7 +81,19 @@ func (e Entry) MintInput() metahash.MintInput {
 
 // Mint fills MetaHash. It is the server's half of the contract, kept here so
 // there is exactly one way to do it.
+//
+// A native row (metahash.Kind.Native) is not minted: its hash slot takes the
+// file's own hash, which is the identity unchanged.
 func (e *Entry) Mint() error {
+	if e.Kind.Native() {
+		if err := e.validateNative(); err != nil {
+			return err
+		}
+		e.MetaHash = append([]byte(nil), e.Identity...)
+
+		return nil
+	}
+
 	hash, err := metahash.Mint(e.MintInput())
 	if err != nil {
 		return err
@@ -132,6 +144,11 @@ func (e Entry) Validate() error {
 	}
 	if e.Kind == metahash.KindNZB && e.Flags&FlagMagnetOnly != 0 {
 		return fmt.Errorf("%w: an nzb row cannot be magnet-only", ErrInvalidEntry)
+	}
+
+	// A native row has no hash to mint, and its own rules instead.
+	if e.Kind.Native() {
+		return e.validateNative()
 	}
 
 	// Minting is where the index rules are enforced, so running it here catches
@@ -410,4 +427,40 @@ type DaemonInfo struct {
 	// EnhancedSearchAvailable says SearchEnhanced answers. False, it reports
 	// unimplemented.
 	EnhancedSearchAvailable bool
+}
+
+// -- internals ---------------------------------------------------------------
+
+// validateNative checks the rules a native row adds: it is one file, and it
+// carries nothing that only a metafile-backed release has.
+func (e Entry) validateNative() error {
+	if want := e.Kind.IdentityLen(); len(e.Identity) != want {
+		return fmt.Errorf("%w: %s takes a %d-byte identity, got %d", ErrInvalidEntry, e.Kind, want, len(e.Identity))
+	}
+
+	// Roughly one MD4 in a million carries the meta-hash marker by chance
+	// (§3.3). Published as a native row it would sit in the hash slot looking
+	// like a torrent or an NZB to every capable client, so the daemon skips
+	// that file instead.
+	if metahash.IsMetaHash(e.Identity) {
+		return fmt.Errorf("%w: the %s hash %X reads as a meta hash", ErrInvalidEntry, e.Kind, e.Identity)
+	}
+
+	if e.FileIndex != 0 || e.FileCount > 1 {
+		return fmt.Errorf("%w: an %s row is a single file, got index %d of %d", ErrInvalidEntry, e.Kind, e.FileIndex, e.FileCount)
+	}
+	if e.PathAuthoritative {
+		return fmt.Errorf("%w: an %s row has no file path to be authoritative", ErrInvalidEntry, e.Kind)
+	}
+	if e.TotalSize != 0 && e.TotalSize != e.Size {
+		return fmt.Errorf("%w: an %s row's total size is its size, got %d and %d", ErrInvalidEntry, e.Kind, e.TotalSize, e.Size)
+	}
+	if e.Magnet != "" {
+		return fmt.Errorf("%w: an %s row cannot carry a magnet", ErrInvalidEntry, e.Kind)
+	}
+	if e.Flags&(FlagMagnetOnly|FlagPrivateTracker|FlagV2Available|FlagNeedsPAR2) != 0 {
+		return fmt.Errorf("%w: an %s row cannot carry torrent or usenet flags (%#x)", ErrInvalidEntry, e.Kind, e.Flags)
+	}
+
+	return nil
 }

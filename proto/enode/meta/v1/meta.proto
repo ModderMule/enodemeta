@@ -22,15 +22,18 @@ enum MetaKind {
   META_KIND_BT_V1 = 1;  // BitTorrent v1 or hybrid; identity is the 20-byte v1 infohash
   META_KIND_BT_V2 = 2;  // BitTorrent v2 only; identity is the 32-byte v2 infohash
   META_KIND_NZB = 3;    // Usenet; identity is the 32-byte canonical NZB digest
+  META_KIND_ED2K = 4;   // eD2K/Kad file; identity is the 16-byte MD4 file hash, which is also the row's hash
 }
 
 // MetaNetwork is a catalogue network: which daemon a search goes to. A network
-// serves one or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB).
+// serves one or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB; Kad:
+// ED2K).
 enum MetaNetwork {
   // META_NETWORK_UNSPECIFIED: every network the server offers.
   META_NETWORK_UNSPECIFIED = 0;
   META_NETWORK_TORRENT = 1;
   META_NETWORK_USENET = 2;
+  META_NETWORK_KAD = 3;
 }
 
 // MetaEntry is one advertised row: a release, or one file inside it.
@@ -44,6 +47,9 @@ message MetaEntry {
   // The server mints it; a daemon must leave it empty. Keeping hash
   // construction in one place means a daemon cannot mint a malformed or
   // colliding hash, and the scheme version stays the server's to bump.
+  //
+  // An ED2K row has no pseudo-hash: the server copies identity here, since the
+  // file's own MD4 is what belongs in the hash slot.
   bytes meta_hash = 1;
 
   MetaKind kind = 2;
@@ -67,6 +73,8 @@ message MetaEntry {
   // type is the eD2K file-type string: Audio, Video, Image, Doc, Pro, Arc, Iso.
   string type = 8;
 
+  // For an ED2K row, seeders is the complete sources and peers every source
+  // the Kad network reported.
   uint32 seeders = 9;
   uint32 peers = 10;
 
@@ -91,7 +99,8 @@ message MetaEntry {
   uint32 flags = 15;
 
   // identity is the pre-fold digest of §3.4: the infohash, or the canonical NZB
-  // digest. The daemon computes it and the server folds it into meta_hash.
+  // digest. The daemon computes it and the server folds it into meta_hash. For
+  // an ED2K row it is the 16-byte MD4 file hash and is not folded.
   bytes identity = 16;
 
   // file_count is how many selectable, non-padding files the release holds.

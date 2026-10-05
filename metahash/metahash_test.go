@@ -511,3 +511,54 @@ func TestHexRoundTrip(t *testing.T) {
 	}
 	t.Logf("output: %s", back)
 }
+
+// TestNativeKind pins what sets an eD2K file apart from every other kind: it is
+// a defined kind with an identity length, and it can never be minted or parsed,
+// because its hash slot holds the file's own MD4.
+func TestNativeKind(t *testing.T) {
+	kind := KindED2K
+	t.Logf("input:  %s", kind)
+	t.Logf("output: valid=%v native=%v mintable=%v identity=%d bytes",
+		kind.Valid(), kind.Native(), kind.Mintable(), kind.IdentityLen())
+
+	if !kind.Valid() || !kind.Native() || kind.Mintable() {
+		t.Errorf("%s must be valid, native and not mintable", kind)
+	}
+	if kind.IdentityLen() != 16 {
+		t.Errorf("an ed2k identity is an MD4: got %d bytes, want 16", kind.IdentityLen())
+	}
+
+	for _, other := range []Kind{KindBTV1, KindBTV2, KindNZB} {
+		if other.Native() || !other.Mintable() {
+			t.Errorf("%s must stay mintable", other)
+		}
+	}
+
+	identity := make([]byte, 16)
+	for i := range identity {
+		identity[i] = byte(i + 1)
+	}
+
+	_, err := Build(kind, 0, 0, identity)
+	t.Logf("Build:  %v", err)
+	if !errors.Is(err, ErrNativeKind) {
+		t.Errorf("Build: got %v, want %v", err, ErrNativeKind)
+	}
+
+	_, err = Mint(MintInput{Kind: kind, Identity: identity, FileCount: 1})
+	t.Logf("Mint:   %v", err)
+	if !errors.Is(err, ErrNativeKind) {
+		t.Errorf("Mint: got %v, want %v", err, ErrNativeKind)
+	}
+
+	// A hash whose kind nibble says ed2k was never minted by anyone.
+	forged := []byte{Magic0, Magic1, Version1, byte(kind) << 4, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	_, err = Parse(forged)
+	t.Logf("Parse:  % x -> %v", forged, err)
+	if !errors.Is(err, ErrKind) {
+		t.Errorf("Parse: got %v, want %v", err, ErrKind)
+	}
+	if IsMetaHash(forged) {
+		t.Errorf("a hash with a native kind nibble must not read as a meta hash")
+	}
+}

@@ -20,10 +20,15 @@ import (
 // Errors returned when a metafile cannot be checked against a hash.
 var (
 	// ErrKindUnsupported means this build cannot derive an identity for that
-	// kind. Every kind version 1 defines has one, so today it means the row
-	// carried a kind from a later version of the scheme — which a consumer must
-	// drop rather than guess at.
+	// kind. Every metafile-backed kind version 1 defines has one, so today it
+	// means the row carried a kind from a later version of the scheme — which a
+	// consumer must drop rather than guess at.
 	ErrKindUnsupported = errors.New("enodemeta: no identity function for this kind")
+
+	// ErrNoMetaFile means the kind is a native eD2K file, which has no metafile
+	// at all: the row's hash is the file's own, and the file is checked against
+	// it by the transfer, not here.
+	ErrNoMetaFile = errors.New("enodemeta: this kind has no metafile")
 
 	// ErrVerification means the metafile is not the one the hash described.
 	ErrVerification = errors.New("enodemeta: the metafile does not match its meta hash")
@@ -98,6 +103,9 @@ func IdentityOf(kind metahash.Kind, metafile []byte) ([]byte, error) {
 		}
 
 		return identity[:], nil
+
+	case metahash.KindED2K:
+		return nil, fmt.Errorf("%w: %s", ErrNoMetaFile, kind)
 
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrKindUnsupported, kind)

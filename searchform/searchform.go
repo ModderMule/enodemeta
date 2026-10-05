@@ -188,6 +188,7 @@ var kindNames = map[metahash.Kind]string{
 	metahash.KindBTV1: "v1",
 	metahash.KindBTV2: "v2",
 	metahash.KindNZB:  "nzb",
+	metahash.KindED2K: "ed2k",
 }
 
 func kindName(k metahash.Kind) string {

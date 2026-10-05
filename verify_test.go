@@ -245,3 +245,19 @@ func TestIdentityOfUnknownKind(t *testing.T) {
 		t.Errorf("got %v, want it to wrap %v", err, ErrKindUnsupported)
 	}
 }
+
+// TestIdentityOfED2K pins that a native eD2K row has no metafile to derive an
+// identity from, and says so with its own error rather than as an unknown kind.
+func TestIdentityOfED2K(t *testing.T) {
+	t.Logf("input:  %s, 3 bytes", metahash.KindED2K)
+
+	_, err := IdentityOf(metahash.KindED2K, []byte("abc"))
+	t.Logf("output: %v", err)
+
+	if !errors.Is(err, ErrNoMetaFile) {
+		t.Errorf("got %v, want it to wrap %v", err, ErrNoMetaFile)
+	}
+	if errors.Is(err, ErrKindUnsupported) {
+		t.Errorf("ed2k is a known kind, got %v", err)
+	}
+}

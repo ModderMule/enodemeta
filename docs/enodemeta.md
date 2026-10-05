@@ -23,7 +23,7 @@ Its only dependencies are `google.golang.org/protobuf` and
 |---|---|
 | `proto/`, `gen/` | The `.proto` files and the generated protobuf + connect code |
 | `metahash/` | The eD2K pseudo-hash: minting, parsing, cross-checking, verification |
-| `btid/` | The `bt:v1:`/`bt:v2:` id namespace, which is also the `catalog_id` format |
+| `btid/` | The `ed2k:`/`bt:v1:`/`bt:v2:`/`nzb:` id namespace, which is also the `catalog_id` format |
 | `model/` | Domain types with no protobuf imports |
 | `pbconv/` | Conversions between `model` and the generated types |
 | `tags/` | The `FT_META_*` tag ids, capability bits, flags, `MaxSources` |
@@ -31,6 +31,7 @@ Its only dependencies are `google.golang.org/protobuf` and
 | `torrentmeta/` | Torrent identity: v1, v2 and hybrid parsing, file trees, padding |
 | `nzbmeta/` | NZB identity: parsing, the canonical digest, a deterministic writer, subjects, PAR2, shortfall |
 | `magnet/` | Magnet construction, including BEP 53 `so=` |
+| `ed2klink/` | eD2K file links, with the optional AICH hash: what a Kad row offers instead of a magnet |
 | `filetype/` | Extension to eD2K file-type string; `Dominant` types a whole-set row by the type holding most of the release's bytes |
 | `verify.go` | `VerifyMetaFile`: recompute the identity and check it against a hash |
 | `testdata/` | The vectors a C++ port is checked against |
@@ -93,6 +94,21 @@ is the only way a row gets one. The rules it enforces:
 - An entry whose `uint16(index)` is `0xFFFF` but which is not the whole-set row
   is refused: minting it would produce two rows with one hash, and they would
   collapse into one result in the client.
+
+### The kind that is not minted
+
+`metahash.KindED2K` is an eD2K/Kad file, and the one **native** kind: its
+identity is the file's own MD4, which is exactly what the hash slot holds in any
+eD2K result. `model.Entry.Mint` therefore copies the identity into `MetaHash`
+instead of calling `metahash.Mint`, and `Build`, `Mint` and `Parse` all refuse
+the kind. `Kind.Native()` asks the question; `Kind.Mintable()` is "defined and
+not native".
+
+Nothing below applies to such a row. It has no metafile to verify, and the four
+nevers are the opposite of true for it. The one guard it adds is in
+`Entry.Validate`: a real hash that happens to carry the meta-hash marker is
+refused, because every capable client would read it as a catalogue row. See
+[amendment 17](ingest-contract.md#amendments-to-the-enode-go-plan-document).
 
 ### Verification and guards
 

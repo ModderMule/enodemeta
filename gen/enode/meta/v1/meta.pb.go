@@ -42,6 +42,7 @@ const (
 	MetaKind_META_KIND_BT_V1       MetaKind = 1 // BitTorrent v1 or hybrid; identity is the 20-byte v1 infohash
 	MetaKind_META_KIND_BT_V2       MetaKind = 2 // BitTorrent v2 only; identity is the 32-byte v2 infohash
 	MetaKind_META_KIND_NZB         MetaKind = 3 // Usenet; identity is the 32-byte canonical NZB digest
+	MetaKind_META_KIND_ED2K        MetaKind = 4 // eD2K/Kad file; identity is the 16-byte MD4 file hash, which is also the row's hash
 )
 
 // Enum value maps for MetaKind.
@@ -51,12 +52,14 @@ var (
 		1: "META_KIND_BT_V1",
 		2: "META_KIND_BT_V2",
 		3: "META_KIND_NZB",
+		4: "META_KIND_ED2K",
 	}
 	MetaKind_value = map[string]int32{
 		"META_KIND_UNSPECIFIED": 0,
 		"META_KIND_BT_V1":       1,
 		"META_KIND_BT_V2":       2,
 		"META_KIND_NZB":         3,
+		"META_KIND_ED2K":        4,
 	}
 )
 
@@ -88,7 +91,8 @@ func (MetaKind) EnumDescriptor() ([]byte, []int) {
 }
 
 // MetaNetwork is a catalogue network: which daemon a search goes to. A network
-// serves one or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB).
+// serves one or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB; Kad:
+// ED2K).
 type MetaNetwork int32
 
 const (
@@ -96,6 +100,7 @@ const (
 	MetaNetwork_META_NETWORK_UNSPECIFIED MetaNetwork = 0
 	MetaNetwork_META_NETWORK_TORRENT     MetaNetwork = 1
 	MetaNetwork_META_NETWORK_USENET      MetaNetwork = 2
+	MetaNetwork_META_NETWORK_KAD         MetaNetwork = 3
 )
 
 // Enum value maps for MetaNetwork.
@@ -104,11 +109,13 @@ var (
 		0: "META_NETWORK_UNSPECIFIED",
 		1: "META_NETWORK_TORRENT",
 		2: "META_NETWORK_USENET",
+		3: "META_NETWORK_KAD",
 	}
 	MetaNetwork_value = map[string]int32{
 		"META_NETWORK_UNSPECIFIED": 0,
 		"META_NETWORK_TORRENT":     1,
 		"META_NETWORK_USENET":      2,
+		"META_NETWORK_KAD":         3,
 	}
 )
 
@@ -302,6 +309,9 @@ type MetaEntry struct {
 	// The server mints it; a daemon must leave it empty. Keeping hash
 	// construction in one place means a daemon cannot mint a malformed or
 	// colliding hash, and the scheme version stays the server's to bump.
+	//
+	// An ED2K row has no pseudo-hash: the server copies identity here, since the
+	// file's own MD4 is what belongs in the hash slot.
 	MetaHash []byte   `protobuf:"bytes,1,opt,name=meta_hash,json=metaHash,proto3" json:"meta_hash,omitempty"`
 	Kind     MetaKind `protobuf:"varint,2,opt,name=kind,proto3,enum=enode.meta.v1.MetaKind" json:"kind,omitempty"`
 	// file_index is the selected file's ordinal, or 0xFFFFFFFF for the row that
@@ -317,7 +327,9 @@ type MetaEntry struct {
 	Size      uint64 `protobuf:"varint,6,opt,name=size,proto3" json:"size,omitempty"`
 	TotalSize uint64 `protobuf:"varint,7,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"`
 	// type is the eD2K file-type string: Audio, Video, Image, Doc, Pro, Arc, Iso.
-	Type    string `protobuf:"bytes,8,opt,name=type,proto3" json:"type,omitempty"`
+	Type string `protobuf:"bytes,8,opt,name=type,proto3" json:"type,omitempty"`
+	// For an ED2K row, seeders is the complete sources and peers every source
+	// the Kad network reported.
 	Seeders uint32 `protobuf:"varint,9,opt,name=seeders,proto3" json:"seeders,omitempty"`
 	Peers   uint32 `protobuf:"varint,10,opt,name=peers,proto3" json:"peers,omitempty"`
 	// age_days is days since posting for Usenet, or since the torrent was first
@@ -336,7 +348,8 @@ type MetaEntry struct {
 	// private tracker, magnet-only, v2 hash available.
 	Flags uint32 `protobuf:"varint,15,opt,name=flags,proto3" json:"flags,omitempty"`
 	// identity is the pre-fold digest of §3.4: the infohash, or the canonical NZB
-	// digest. The daemon computes it and the server folds it into meta_hash.
+	// digest. The daemon computes it and the server folds it into meta_hash. For
+	// an ED2K row it is the 16-byte MD4 file hash and is not folded.
 	Identity []byte `protobuf:"bytes,16,opt,name=identity,proto3" json:"identity,omitempty"`
 	// file_count is how many selectable, non-padding files the release holds.
 	//
@@ -1865,16 +1878,18 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\n" +
 	"MediaEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12.\n" +
-	"\x05value\x18\x02 \x01(\v2\x18.enode.meta.v1.MediaInfoR\x05value:\x028\x01*b\n" +
+	"\x05value\x18\x02 \x01(\v2\x18.enode.meta.v1.MediaInfoR\x05value:\x028\x01*v\n" +
 	"\bMetaKind\x12\x19\n" +
 	"\x15META_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V1\x10\x01\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V2\x10\x02\x12\x11\n" +
-	"\rMETA_KIND_NZB\x10\x03*^\n" +
+	"\rMETA_KIND_NZB\x10\x03\x12\x12\n" +
+	"\x0eMETA_KIND_ED2K\x10\x04*t\n" +
 	"\vMetaNetwork\x12\x1c\n" +
 	"\x18META_NETWORK_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14META_NETWORK_TORRENT\x10\x01\x12\x17\n" +
-	"\x13META_NETWORK_USENET\x10\x02*\xd3\x02\n" +
+	"\x13META_NETWORK_USENET\x10\x02\x12\x14\n" +
+	"\x10META_NETWORK_KAD\x10\x03*\xd3\x02\n" +
 	"\n" +
 	"SearchSort\x12\x1b\n" +
 	"\x17SEARCH_SORT_UNSPECIFIED\x10\x00\x12\x19\n" +

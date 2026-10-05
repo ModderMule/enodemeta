@@ -30,6 +30,7 @@ func TestFormatAndParse(t *testing.T) {
 		{"a v1 torrent", V1(v1), NetworkBTV1, v1[:]},
 		{"a v2 torrent", V2(v2), NetworkBTV2, v2[:]},
 		{"an ed2k file", PrefixED2K + strings.ToUpper("00020406080a0c0e10121416181a1c1e"), NetworkED2K, md4[:]},
+		{"an ed2k file, formatted", ED2K(md4), NetworkED2K, md4[:]},
 	}
 
 	for _, c := range cases {

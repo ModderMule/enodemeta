@@ -107,6 +107,12 @@ func (id ID) String() string {
 	}
 }
 
+// ED2K formats an eD2K file's id from its MD4 hash. It is also a Kad
+// catalogue's catalog_id.
+func ED2K(hash [16]byte) string {
+	return PrefixED2K + upperHex(hash[:])
+}
+
 // V1 formats a v1 or hybrid torrent's id.
 func V1(infohash [20]byte) string {
 	return PrefixBTV1 + upperHex(infohash[:])
