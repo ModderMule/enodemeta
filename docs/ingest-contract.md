@@ -84,8 +84,8 @@ by three orders of magnitude.
 
 ## Identity: `catalog_id`
 
-A release is named by `bt:v1:<40 hex>`, `bt:v2:<64 hex>` or `nzb:<64 hex>`,
-uppercase hex, formatted and parsed only by `btid`. A hybrid
+A release is named by `bt:v1:<40 hex>`, `bt:v2:<64 hex>`, `nzb:<64 hex>` or
+`ed2k:<32 hex>`, uppercase hex, formatted and parsed only by `btid`. A hybrid
 torrent is keyed by its **v1** hash, because that is the one both versions of the
 network agree on; keying it by v2 would catalogue the same release twice. A
 Usenet release is keyed by the canonical NZB digest of
@@ -586,3 +586,24 @@ additions below are about meaning rather than about wire format.
     - **Every client gets these rows.** The capability bits of plan §5 gate
       pseudo-hash rows, which a stock client cannot act on. A native row it
       can simply download.
+
+19. **`MetaApi.Search` serves the Kad network as a third one.** No proto
+    change: `META_NETWORK_KAD` and `META_KIND_ED2K` are amendment 17's. This
+    one says what the client-facing search does with them.
+
+    - **`META_NETWORK_UNSPECIFIED` is every network the server offers**, Kad
+      included, and `Caps.networks` lists it. A client that wants torrent and
+      Usenet without Kad asks with `kinds`.
+    - **Releases alternate in the order torrent, Usenet, Kad**, one from each,
+      and a network that runs out drops out. DATE and SIZE merge by key, as
+      amendment 14 says; an ED2K row that leaves `total_size` unset is
+      compared by `size`.
+    - **An ED2K entry has no metafile and no magnet.** Its `meta_hash` is the
+      file's MD4, so `GetMetaFile` refuses it as `invalid_argument`: it is not
+      a meta hash. `Caps.kinds` is the kinds whose metafiles are served and
+      never lists ED2K. The client builds the eD2K link with `ed2klink.Build`.
+    - **The name is the file's own.** The `[kad] ` prefix of amendment 18
+      belongs to the eD2K search result and is not put on an API row.
+    - **Nothing is merged with the eD2K search.** A file the server itself
+      holds can come back from both; the "server's own file wins" rule of
+      amendment 18 is the eD2K path's.

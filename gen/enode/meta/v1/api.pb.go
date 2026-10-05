@@ -1,5 +1,6 @@
 // MetaApi and AccountApi: how an eMuleQt client talks to an eNode-go server
-// about the torrent and Usenet rows it found in an eD2K search.
+// about the torrent and Usenet rows it found in an eD2K search, and how it
+// searches the torrent, Usenet and Kad catalogues directly.
 //
 // This is the client-facing half of the contract (phase 4 of the
 // specification). MetaIngest runs server → daemon; these services run
@@ -246,7 +247,8 @@ type Caps struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// contract_version is the major version of enode.meta.v1 served.
 	ContractVersion uint32 `protobuf:"varint,1,opt,name=contract_version,json=contractVersion,proto3" json:"contract_version,omitempty"`
-	// kinds are the MetaKinds whose metafiles this server can serve.
+	// kinds are the MetaKinds whose metafiles this server can serve. ED2K is
+	// never among them: an eD2K file has no metafile.
 	Kinds    []MetaKind `protobuf:"varint,2,rep,packed,name=kinds,proto3,enum=enode.meta.v1.MetaKind" json:"kinds,omitempty"`
 	AuthMode AuthMode   `protobuf:"varint,3,opt,name=auth_mode,json=authMode,proto3,enum=enode.meta.v1.AuthMode" json:"auth_mode,omitempty"`
 	// registration_url is the website page where an account is created. Empty
@@ -270,7 +272,8 @@ type Caps struct {
 	// lets anyone search but only accounts download.
 	SearchRequiresAccount bool `protobuf:"varint,9,opt,name=search_requires_account,json=searchRequiresAccount,proto3" json:"search_requires_account,omitempty"`
 	// networks are the catalogue networks MetaApi.Search can query, for a
-	// client's torrent / Usenet / both selector. Empty when search is not served.
+	// client's torrent / Usenet / Kad / all selector. Empty when search is not
+	// served.
 	Networks      []MetaNetwork `protobuf:"varint,10,rep,packed,name=networks,proto3,enum=enode.meta.v1.MetaNetwork" json:"networks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

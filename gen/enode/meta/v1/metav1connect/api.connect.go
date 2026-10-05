@@ -1,5 +1,6 @@
 // MetaApi and AccountApi: how an eMuleQt client talks to an eNode-go server
-// about the torrent and Usenet rows it found in an eD2K search.
+// about the torrent and Usenet rows it found in an eD2K search, and how it
+// searches the torrent, Usenet and Kad catalogues directly.
 //
 // This is the client-facing half of the contract (phase 4 of the
 // specification). MetaIngest runs server → daemon; these services run
@@ -100,8 +101,10 @@ type MetaApiClient interface {
 	// blended in. A server that does not offer it answers unimplemented and says
 	// so in Caps.search_available.
 	//
-	// SearchRequest.network picks torrent, Usenet or both (the default). With
-	// both, the networks' releases alternate, one from each, until one runs out.
+	// SearchRequest.network picks torrent, Usenet or Kad, or every network the
+	// server offers (the default). With several, the networks' releases
+	// alternate, one from each in that order, and a network that runs out drops
+	// out. DATE and SIZE merge by key instead, since every network answers them.
 	//
 	// Paging counts releases, not rows: a multi-file release is several entries
 	// sharing a catalog_id, and they always arrive on the same page. Ask for the
@@ -111,6 +114,8 @@ type MetaApiClient interface {
 	//
 	// Each entry carries its meta_hash and catalog_id, which is all GetMetaFile
 	// needs. An entry with the magnet-only flag has no metafile: use its magnet.
+	// A META_KIND_ED2K entry has neither: its meta_hash is the file's own MD4,
+	// and the client builds the eD2K link from name, size and identity.
 	//
 	// Errors: invalid_argument (no keyword, or a query that is too long),
 	// unavailable (every searched network is down), unauthenticated /
@@ -148,8 +153,10 @@ type MetaApiHandler interface {
 	// blended in. A server that does not offer it answers unimplemented and says
 	// so in Caps.search_available.
 	//
-	// SearchRequest.network picks torrent, Usenet or both (the default). With
-	// both, the networks' releases alternate, one from each, until one runs out.
+	// SearchRequest.network picks torrent, Usenet or Kad, or every network the
+	// server offers (the default). With several, the networks' releases
+	// alternate, one from each in that order, and a network that runs out drops
+	// out. DATE and SIZE merge by key instead, since every network answers them.
 	//
 	// Paging counts releases, not rows: a multi-file release is several entries
 	// sharing a catalog_id, and they always arrive on the same page. Ask for the
@@ -159,6 +166,8 @@ type MetaApiHandler interface {
 	//
 	// Each entry carries its meta_hash and catalog_id, which is all GetMetaFile
 	// needs. An entry with the magnet-only flag has no metafile: use its magnet.
+	// A META_KIND_ED2K entry has neither: its meta_hash is the file's own MD4,
+	// and the client builds the eD2K link from name, size and identity.
 	//
 	// Errors: invalid_argument (no keyword, or a query that is too long),
 	// unavailable (every searched network is down), unauthenticated /
