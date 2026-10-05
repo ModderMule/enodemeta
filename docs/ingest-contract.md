@@ -553,8 +553,8 @@ additions below are about meaning rather than about wire format.
       staying out of it. kademlia-crawler's `docs/emule-spam.md` has the
       conditions.
     - **Filters follow amendment 14's ignore rule.** A Kad daemon answers
-      `min_seeders` against complete sources and drops the torrent- and
-      Usenet-only ones.
+      `min_seeders` against sources (amendment 20; this said complete sources
+      before) and drops the torrent- and Usenet-only ones.
     - **A server that predates this amendment is not harmed by it.** proto3's
       open enums carry the new values through as numbers: a server that does
       not know kind 4 fails `KindFromProto` to unspecified and drops the row,
@@ -610,3 +610,23 @@ additions below are about meaning rather than about wire format.
       `seeders`. It is not dropped as amendment 18 drops the eD2K row: this
       search has no row of the server's to send instead. The entry keeps its
       place, so paging and `total` are the daemon's.
+
+20. **A Kad daemon answers `Search.min_seeders` against sources**, correcting
+    amendment 17, which said complete sources. No proto change.
+
+    - **Why.** Kad carries no count of complete sources. Stock eMule's
+      keyword publish sends one count, `TAG_SOURCES`, and no
+      `TAG_COMPLETE_SOURCES`. Of 34,690 files kademlia-crawler catalogued
+      from search results, 28,513 came with a source count and 10 with a
+      count of complete sources, so the old mapping filtered out nearly
+      every file for any `min_seeders` of 1 or more.
+    - **What it compares.** The source count the daemon holds, before its
+      cap (`catalog.max_sources`, 99 by default). A file with 500 sources
+      matches `min_seeders` 200 and its row still says `peers` 99.
+    - **What does not change.** A row's `seeders` is still the complete
+      sources and `peers` the sources. `SEARCH_SORT_SEEDERS` still orders by
+      complete sources and `SEARCH_SORT_LEECHERS` by sources. `min_leechers`
+      is still dropped by a Kad daemon.
+    - **For a consumer:** a returned ED2K row may have `seeders` below
+      `min_seeders`, and `peers` below it too when the cap applies. A server
+      must not filter the daemon's rows by either again.
