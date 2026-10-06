@@ -232,6 +232,7 @@ Two invariants are tested: `Identity(Parse(Encode(d))) == Identity(d)` and
 | `FT_META_MAGNET` | `0x6C` | A magnet, so a client need make no API call at all |
 | `FT_META_NETWORK` | `0x6D` | Marks a native row (a real eD2K file) with the network that found it; 3 = Kad. Its only meta tag |
 | `ST_META_API*` | `0x9C`, `0x9E`, `0x9F` | Where the server's metadata API is |
+| `ST_SERVER_SEARCH*` | `0xA0`, `0xA1` | Where a server's `ServerSearch` service is, and its certificate pin. Sent in the UDP description reply, server to server; see [server-search-contract.md](server-search-contract.md) |
 
 `0x66` is permanently unused: a server-supplied per-row URL would turn every
 client into an SSRF probe. `MaxSources = 99` caps an advertised source count,
@@ -314,6 +315,12 @@ which links no works, always answers `Unimplemented`.
 
 ## Deferred
 
+- ~~**Server-to-server search**~~ — built: `proto/enode/meta/v1/server.proto` defines
+  `ServerSearch` (`GetServerInfo`, `SearchFiles`, `BrowseFiles`), by which one eD2K
+  server searches and walks the catalogue of another. It serves the answering
+  server's own eD2K files only and never identifies a client. `model/server.go`
+  and `pbconv/server.go` carry the types; the contract is
+  [server-search-contract.md](server-search-contract.md).
 - ~~**`api.proto` (MetaApi)**~~ — built: `proto/enode/meta/v1/api.proto` defines
   `MetaApi` (`GetCaps`, `GetMetaFile`, `Search`) and `AccountApi` (`GetAuthStatus`,
   `Login`, `Logout`), reusing `MetaFile`, `MetaKind` and `Search*`. eNode-go serves

@@ -138,6 +138,24 @@ const (
 	STMetaAPIVersion = 0x9F
 )
 
+// The server tags in the UDP server description reply (OP_SERVER_DESC_RES) that
+// tell another server where the ServerSearch service is. They go there rather
+// than in OP_SERVERIDENT because servers never log into each other over TCP:
+// the description reply is what one server already asks of another.
+//
+// 0xA0 and 0xA1 are free as tag ids in every surveyed tree: srchybrid stops at
+// 0x98, eMuleQt adds 0x99, 0x9C, 0x9E, 0x9F and 0xAB, and eNode-go's own ids are
+// 0x9D and 0xAB-0xAF. The opcodes of the same value live in another namespace.
+// A reader that does not know a tag skips it, as both client trees do.
+const (
+	// STServerSearch is the ServerSearch base URL.
+	STServerSearch = 0xA0
+
+	// STServerSearchFingerprint is "sha256/<base64>" of the service
+	// certificate's SubjectPublicKeyInfo, in the form of STMetaAPIFingerprint.
+	STServerSearchFingerprint = 0xA1
+)
+
 // Capability bits (§5.1, §5.2).
 const (
 	// SrvCapMetaSearch is the client's bit in the CT_SERVER_FLAGS login tag,
@@ -149,6 +167,11 @@ const (
 	// FlagMetaSearch is the server's bit in its own flags word, saying it
 	// serves a catalogue. eNode-go's own flags stop at 0x8000.
 	FlagMetaSearch = 0x10000
+
+	// FlagServerSearch is the server's bit in its own flags word, saying it
+	// answers ServerSearch for other servers. It is the next bit after
+	// FlagMetaSearch; no surveyed tree uses it.
+	FlagServerSearch = 0x20000
 
 	// SrvCapUDPMetaSearch is the opt-in inside OP_GLOBSEARCHREQ3's client tag
 	// block. The older global-search opcodes have no tag block and therefore

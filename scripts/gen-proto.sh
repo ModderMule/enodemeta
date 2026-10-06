@@ -48,7 +48,8 @@ mkdir -p "$OUT_DIR"
     --plugin=protoc-gen-connect-go="$TOOLS_DIR/protoc-gen-connect-go" \
     --go_out="$OUT_DIR" --go_opt=module=github.com/ModderMule/enodemeta/gen \
     --connect-go_out="$OUT_DIR" --connect-go_opt=module=github.com/ModderMule/enodemeta/gen \
-    enode/meta/v1/meta.proto enode/meta/v1/ingest.proto enode/meta/v1/api.proto
+    enode/meta/v1/meta.proto enode/meta/v1/ingest.proto enode/meta/v1/api.proto \
+    enode/meta/v1/server.proto
 )
 
 echo "Tidying the module..."

@@ -1,0 +1,187 @@
+// ServerSearch: how one eD2K server searches and browses the file catalogue of
+// another.
+//
+// MetaIngest runs server → daemon and MetaApi runs client → server; this
+// service runs server → server. A server that implements it answers for the
+// files its own connected users share, and for nothing else: not the rows it
+// took from a catalogue daemon, and not the rows it learned from another
+// server. That is what keeps a file from travelling round a ring of servers.
+//
+// # No client is ever identified
+//
+// A user chose the server they logged into, not the servers it talks to. So no
+// message here carries an address, a port, a client id or a user hash, and no
+// call returns a source. A row says a file exists and how many users of the
+// answering server share it; finding a source stays between the client and the
+// networks it already uses. A field that could identify a client must never be
+// added to this file.
+//
+// # Discovery
+//
+// A server learns of another either from its own configuration or from the
+// ST_SERVER_SEARCH tag of the UDP server description reply, and asks
+// GetServerInfo what is offered before it calls anything else.
+syntax = "proto3";
+
+package enode.meta.v1;
+
+option go_package = "github.com/ModderMule/enodemeta/gen/enode/meta/v1;metav1";
+
+// ServerSearch serves a server's own eD2K file catalogue to other servers.
+//
+// Every call may answer unauthenticated or permission_denied (the caller is not
+// a server this one accepts) and resource_exhausted (rate limit). Each carries
+// an ErrorInfo detail with a msg_code.
+service ServerSearch {
+  // GetServerInfo describes the server and the limits it applies. A caller
+  // asks it first, and again before each catalogue walk.
+  rpc GetServerInfo(GetServerInfoRequest) returns (ServerInfo);
+
+  // SearchFiles answers a keyword search over the catalogue.
+  //
+  // Every keyword in query must match the file name. Paging is by offset: ask
+  // for the next page with ServerSearchResponse.next_offset rather than
+  // computing it, since the server caps limit; zero means there is no further
+  // page. Pages are stable while the server caches the query, a few minutes.
+  // A search reaches a bounded number of files, so it is not a way to read the
+  // whole catalogue: that is BrowseFiles.
+  //
+  // Errors: invalid_argument (no keyword, or a query that is too long),
+  // unimplemented (ServerInfo.search_available is false).
+  rpc SearchFiles(ServerSearchRequest) returns (ServerSearchResponse);
+
+  // BrowseFiles walks the whole catalogue, a page at a time.
+  //
+  // The first call sends no page_token; each later call sends the
+  // next_page_token of the answer before it. An empty next_page_token ends the
+  // walk. The order is the server's own and means nothing.
+  //
+  // A walk is not a snapshot. A file that appears or disappears while the walk
+  // runs may be missed or reported, and a file may be reported twice. A caller
+  // that mirrors the catalogue therefore keeps a file until a whole later walk
+  // completes without it.
+  //
+  // When the server can no longer continue from a token it answers with reset
+  // set and no files: the caller starts again without a token, and must not
+  // treat the abandoned walk as complete.
+  //
+  // Errors: invalid_argument (a token this server did not issue),
+  // unimplemented (ServerInfo.browse_available is false).
+  rpc BrowseFiles(BrowseFilesRequest) returns (BrowseFilesResponse);
+}
+
+// ServerFile is one file of the catalogue.
+//
+// It deliberately has no field that identifies who shares the file.
+message ServerFile {
+  // hash is the file's 16-byte eD2K MD4. With size it is the file's identity.
+  bytes hash = 1;
+  uint64 size = 2;
+  string name = 3;
+
+  // type is the eD2K file type: Audio, Video, Image, Doc, Pro, Arc, Iso. Empty
+  // when the server does not know it.
+  string type = 4;
+
+  // sources is how many users of the answering server share the file, and
+  // complete_sources how many of them have all of it. They are counts and
+  // nothing more. A caller holding the same file from several servers must not
+  // add them up: nothing says the users differ.
+  uint32 sources = 5;
+  uint32 complete_sources = 6;
+
+  // The media tags the sharing clients published, empty or zero when unknown.
+  string title = 7;
+  string artist = 8;
+  string album = 9;
+  uint32 runtime_seconds = 10;
+  uint32 bitrate = 11;
+  string codec = 12;
+}
+
+message GetServerInfoRequest {}
+
+message ServerInfo {
+  // contract_version is the highest major version of this contract served.
+  uint32 contract_version = 1;
+
+  // name is the server's display name.
+  string name = 2;
+
+  // files is how many files the catalogue holds.
+  uint64 files = 3;
+
+  bool search_available = 4;
+  bool browse_available = 5;
+
+  // The most files one SearchFiles or BrowseFiles answer carries. A larger
+  // limit is capped, not refused.
+  uint32 max_search_limit = 6;
+  uint32 max_browse_limit = 7;
+
+  // browse_min_interval_seconds is how long the server asks a caller to wait
+  // between two BrowseFiles calls. Zero means no wait is asked.
+  uint32 browse_min_interval_seconds = 8;
+
+  // catalog_epoch changes when the catalogue was rebuilt rather than edited,
+  // a restart for one. A page token of an earlier epoch answers reset.
+  uint64 catalog_epoch = 9;
+}
+
+message ServerSearchRequest {
+  // query is the keywords, separated by spaces. All must match.
+  string query = 1;
+
+  // exclude lists keywords none of which may match.
+  repeated string exclude = 2;
+
+  // type restricts the answer to one eD2K file type. Empty means any.
+  string type = 3;
+
+  // Size bounds in bytes. Zero means no bound.
+  uint64 min_size = 4;
+  uint64 max_size = 5;
+
+  // min_sources drops files fewer users share. Zero means no bound.
+  uint32 min_sources = 6;
+
+  // limit is how many files to return. Zero means the server's default.
+  uint32 limit = 7;
+  uint32 offset = 8;
+}
+
+message ServerSearchResponse {
+  repeated ServerFile files = 1;
+
+  // total is how many files the search reached, across all its pages.
+  uint64 total = 2;
+
+  // next_offset is where the next page starts. Zero means there is none.
+  uint32 next_offset = 3;
+}
+
+message BrowseFilesRequest {
+  // page_token is empty on the first call, then the previous answer's
+  // next_page_token, unchanged. It is opaque.
+  bytes page_token = 1;
+
+  // limit is how many files to return. Zero means the server's default.
+  uint32 limit = 2;
+}
+
+message BrowseFilesResponse {
+  repeated ServerFile files = 1;
+
+  // next_page_token continues the walk. Empty means the walk is complete,
+  // unless reset is set.
+  bytes next_page_token = 2;
+
+  // catalog_epoch is the epoch this page was read in.
+  uint64 catalog_epoch = 3;
+
+  // reset says the token is no longer usable: start again without one.
+  bool reset = 4;
+
+  // total is how many files the catalogue holds now.
+  uint64 total = 5;
+}

@@ -2,7 +2,7 @@
 
 The shared contract between the eNode-go server, its catalogue daemons
 (torrent-crawler, usenet-crawler, kademlia-crawler) and the eMuleQt client: the `enode.meta.v1`
-protobuf service `MetaIngest`, its generated connect-go code, and the code that
+protobuf services (`MetaIngest`, `MetaApi`, `ServerSearch`), their generated connect-go code, and the code that
 has to produce identical bytes in every repository — the eD2K pseudo-hash, the
 `ed2k:`/`bt:`/`nzb:` ids, the `FT_META_*` tag ids, and torrent/NZB identity parsing.
 

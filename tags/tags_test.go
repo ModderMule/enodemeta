@@ -48,20 +48,32 @@ func TestServerTagsAvoidTakenNumbers(t *testing.T) {
 		0x98: "ST_UDPPORTOBFUSCATION (srchybrid)",
 		0x99: "ST_IPV6 (eMuleQt)",
 		0x9D: "ST_NAT_PORT (eNode-go)",
+		0xAB: "ST_IPV6_STATUS (eMuleQt, eNode-go)",
+		0xAD: "CT_MOD_YOUR_IP (eNode-go)",
+		0xAE: "CT_MOD_IPV6 (eNode-go)",
+		0xAF: "CT_MOD_SVR_IPV6 (eNode-go)",
 	}
 
 	ours := map[string]int{
 		"STMetaAPIFingerprint": STMetaAPIFingerprint,
 		"STMetaAPI":            STMetaAPI,
 		"STMetaAPIVersion":     STMetaAPIVersion,
+
+		"STServerSearch":            STServerSearch,
+		"STServerSearchFingerprint": STServerSearchFingerprint,
 	}
 
+	seen := map[int]string{}
 	for name, id := range ours {
-		t.Logf("input:  %-22s 0x%02X", name, id)
+		t.Logf("input:  %-26s 0x%02X", name, id)
 
 		if other, clash := taken[id]; clash {
 			t.Errorf("%s is 0x%02X, which is %s", name, id, other)
 		}
+		if other, clash := seen[id]; clash {
+			t.Errorf("%s and %s are both 0x%02X", name, other, id)
+		}
+		seen[id] = name
 	}
 	t.Logf("output: no clash with the numbers the three trees already use")
 }
@@ -92,6 +104,14 @@ func TestCapabilityBitsDoNotClash(t *testing.T) {
 	if FlagMetaSearch <= enodeHighestFlag {
 		t.Errorf("FlagMetaSearch 0x%X must be above eNode-go's highest existing flag 0x%X",
 			FlagMetaSearch, enodeHighestFlag)
+	}
+
+	// The server-search bit is a server flag like FlagMetaSearch, and must be a
+	// bit of its own above it.
+	t.Logf("input:  FlagServerSearch=0x%05X", FlagServerSearch)
+	if FlagServerSearch <= FlagMetaSearch || FlagServerSearch&(FlagServerSearch-1) != 0 {
+		t.Errorf("FlagServerSearch 0x%X must be a single bit above FlagMetaSearch 0x%X",
+			FlagServerSearch, FlagMetaSearch)
 	}
 
 	// The UDP opt-in shares a value with SRVCAP_UDP_NEWTAGS_LARGEFILES (0x01),
