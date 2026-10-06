@@ -214,6 +214,10 @@ func TestDaemonInfoRoundTrip(t *testing.T) {
 		SearchAvailable:  true,
 
 		EnhancedSearchAvailable: true,
+
+		NetworkUsers:             412000,
+		NetworkUsersExperimental: 365000,
+		NetworkFiles:             44496000,
 	}
 	t.Logf("input:  %+v", info)
 

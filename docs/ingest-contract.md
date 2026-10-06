@@ -304,12 +304,18 @@ keyed by the meta hash it minted. The fold is not reversible, so a later
 Returns the daemon name, version, contract version, the kinds it produces, the
 feed's `last_seq` and `purged_through_seq`, the published and catalogued counts,
 the number of files the catalogued releases hold (`files`), the indexer name it
-puts in every row, whether search is available, and whether the enhanced search
-is (`enhanced_search_available`, amendment 15).
+puts in every row, whether search is available, whether the enhanced search
+is (`enhanced_search_available`, amendment 15), and the daemon's estimates of
+the size of the network it crawls (`network_users`,
+`network_users_experimental` and `network_files`, amendment 21).
 
 `files` counts files, not releases: a multi-file release yields one row per
 selectable file. It is the figure an eD2K server adds to its own file total when
 an operator chooses to count catalogue files in the server status.
+
+`network_files` is a different figure: an estimate of the files the whole
+network holds, most of which the daemon has never seen. It is not added to
+`files`.
 
 `purged_through_seq` is the number a consumer acts on: resume above it, or
 expect a snapshot.
@@ -630,3 +636,26 @@ additions below are about meaning rather than about wire format.
     - **For a consumer:** a returned ED2K row may have `seeders` below
       `min_seeders`, and `peers` below it too when the cap applies. A server
       must not filter the daemon's rows by either again.
+
+21. **`GetInfo` carries the daemon's estimate of the network's size.** Three
+    fields, `network_users` (13), `network_users_experimental` (14) and
+    `network_files` (15).
+
+    - **Two user counts, because eMule makes two.** `network_users` comes
+      from how densely the daemon's routing table is filled near its own id
+      and is the number eMule shows. `network_users_experimental` comes from
+      how close the nearest node of each lookup came to its target, averaged
+      over many lookups, and is the one eMule labels experimental.
+    - **`network_files` is the whole network's, not the catalogue's.** A
+      daemon estimates it from the user count; how is its own business and
+      its documentation says. `files` stays the count of what is catalogued.
+    - **Zero is no estimate**, not an empty network: a daemon that has just
+      started, has too few lookups for the experimental figure, or does not
+      estimate at all sends zero. A consumer must not read it as a count.
+    - **The figures are the network's, not this daemon's or its consumer's.**
+      A server that adds `network_users` to the user count it advertises is
+      counting users who are not connected to it, which is an operator's
+      choice to make and off unless made.
+    - **A peer that predates this amendment is not harmed by it.** An older
+      daemon omits the fields and proto3 reads them as zero; an older server
+      ignores them.

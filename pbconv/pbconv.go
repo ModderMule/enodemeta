@@ -304,6 +304,10 @@ func DaemonInfoToProto(info model.DaemonInfo) *metav1.GetInfoResponse {
 		SearchAvailable:  info.SearchAvailable,
 
 		EnhancedSearchAvailable: info.EnhancedSearchAvailable,
+
+		NetworkUsers:             info.NetworkUsers,
+		NetworkUsersExperimental: info.NetworkUsersExperimental,
+		NetworkFiles:             info.NetworkFiles,
 	}
 }
 
@@ -332,6 +336,10 @@ func DaemonInfoFromProto(res *metav1.GetInfoResponse) model.DaemonInfo {
 		SearchAvailable:  res.GetSearchAvailable(),
 
 		EnhancedSearchAvailable: res.GetEnhancedSearchAvailable(),
+
+		NetworkUsers:             res.GetNetworkUsers(),
+		NetworkUsersExperimental: res.GetNetworkUsersExperimental(),
+		NetworkFiles:             res.GetNetworkFiles(),
 	}
 }
 

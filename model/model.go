@@ -427,6 +427,14 @@ type DaemonInfo struct {
 	// EnhancedSearchAvailable says SearchEnhanced answers. False, it reports
 	// unimplemented.
 	EnhancedSearchAvailable bool
+
+	// NetworkUsers estimates the users of the network the daemon crawls from
+	// the density of its routing table, and NetworkUsersExperimental from the
+	// closest node of each lookup. NetworkFiles estimates the files the whole
+	// network holds. Zero is no estimate.
+	NetworkUsers             uint64
+	NetworkUsersExperimental uint64
+	NetworkFiles             uint64
 }
 
 // -- internals ---------------------------------------------------------------

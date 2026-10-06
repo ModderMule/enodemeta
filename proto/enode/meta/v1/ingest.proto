@@ -163,4 +163,19 @@ message GetInfoResponse {
   // links releases to works, has a search index, and its operator turned it
   // on. False, the call reports unimplemented.
   bool enhanced_search_available = 12;
+
+  // network_users is the daemon's estimate of how many users the network it
+  // crawls has, taken from how densely its routing table is filled near its
+  // own id; the figure an eMule client shows as the Kad user count. Zero is no
+  // estimate.
+  uint64 network_users = 13;
+
+  // network_users_experimental is the same estimate made the other way, from
+  // how close the nearest node of each lookup came to its target; what eMule
+  // labels experimental. Zero until the daemon has enough lookups to average.
+  uint64 network_users_experimental = 14;
+
+  // network_files is the daemon's estimate of how many files the whole
+  // network holds, which is not what it has catalogued. Zero is no estimate.
+  uint64 network_files = 15;
 }

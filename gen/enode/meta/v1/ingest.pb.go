@@ -488,8 +488,20 @@ type GetInfoResponse struct {
 	// links releases to works, has a search index, and its operator turned it
 	// on. False, the call reports unimplemented.
 	EnhancedSearchAvailable bool `protobuf:"varint,12,opt,name=enhanced_search_available,json=enhancedSearchAvailable,proto3" json:"enhanced_search_available,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// network_users is the daemon's estimate of how many users the network it
+	// crawls has, taken from how densely its routing table is filled near its
+	// own id; the figure an eMule client shows as the Kad user count. Zero is no
+	// estimate.
+	NetworkUsers uint64 `protobuf:"varint,13,opt,name=network_users,json=networkUsers,proto3" json:"network_users,omitempty"`
+	// network_users_experimental is the same estimate made the other way, from
+	// how close the nearest node of each lookup came to its target; what eMule
+	// labels experimental. Zero until the daemon has enough lookups to average.
+	NetworkUsersExperimental uint64 `protobuf:"varint,14,opt,name=network_users_experimental,json=networkUsersExperimental,proto3" json:"network_users_experimental,omitempty"`
+	// network_files is the daemon's estimate of how many files the whole
+	// network holds, which is not what it has catalogued. Zero is no estimate.
+	NetworkFiles  uint64 `protobuf:"varint,15,opt,name=network_files,json=networkFiles,proto3" json:"network_files,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetInfoResponse) Reset() {
@@ -606,6 +618,27 @@ func (x *GetInfoResponse) GetEnhancedSearchAvailable() bool {
 	return false
 }
 
+func (x *GetInfoResponse) GetNetworkUsers() uint64 {
+	if x != nil {
+		return x.NetworkUsers
+	}
+	return 0
+}
+
+func (x *GetInfoResponse) GetNetworkUsersExperimental() uint64 {
+	if x != nil {
+		return x.NetworkUsersExperimental
+	}
+	return 0
+}
+
+func (x *GetInfoResponse) GetNetworkFiles() uint64 {
+	if x != nil {
+		return x.NetworkFiles
+	}
+	return 0
+}
+
 var File_enode_meta_v1_ingest_proto protoreflect.FileDescriptor
 
 const file_enode_meta_v1_ingest_proto_rawDesc = "" +
@@ -634,7 +667,7 @@ const file_enode_meta_v1_ingest_proto_rawDesc = "" +
 	"\n" +
 	"catalog_id\x18\x01 \x01(\tR\tcatalogId\x12\x1a\n" +
 	"\bidentity\x18\x02 \x01(\fR\bidentity\"\x10\n" +
-	"\x0eGetInfoRequest\"\xbb\x03\n" +
+	"\x0eGetInfoRequest\"\xc3\x04\n" +
 	"\x0fGetInfoResponse\x12\x16\n" +
 	"\x06daemon\x18\x01 \x01(\tR\x06daemon\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12)\n" +
@@ -650,7 +683,10 @@ const file_enode_meta_v1_ingest_proto_rawDesc = "" +
 	"\x10search_available\x18\n" +
 	" \x01(\bR\x0fsearchAvailable\x12\x14\n" +
 	"\x05files\x18\v \x01(\x04R\x05files\x12:\n" +
-	"\x19enhanced_search_available\x18\f \x01(\bR\x17enhancedSearchAvailable*R\n" +
+	"\x19enhanced_search_available\x18\f \x01(\bR\x17enhancedSearchAvailable\x12#\n" +
+	"\rnetwork_users\x18\r \x01(\x04R\fnetworkUsers\x12<\n" +
+	"\x1anetwork_users_experimental\x18\x0e \x01(\x04R\x18networkUsersExperimental\x12#\n" +
+	"\rnetwork_files\x18\x0f \x01(\x04R\fnetworkFiles*R\n" +
 	"\bChangeOp\x12\x19\n" +
 	"\x15CHANGE_OP_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10CHANGE_OP_UPSERT\x10\x01\x12\x15\n" +
