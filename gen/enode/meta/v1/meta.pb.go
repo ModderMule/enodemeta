@@ -90,8 +90,8 @@ func (MetaKind) EnumDescriptor() ([]byte, []int) {
 	return file_enode_meta_v1_meta_proto_rawDescGZIP(), []int{0}
 }
 
-// MetaNetwork is a catalogue network: which daemon a search goes to. A network
-// serves one or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB; Kad:
+// MetaNetwork is a catalogue network: where a search goes. A network serves one
+// or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB; Kad and servers:
 // ED2K).
 type MetaNetwork int32
 
@@ -101,6 +101,11 @@ const (
 	MetaNetwork_META_NETWORK_TORRENT     MetaNetwork = 1
 	MetaNetwork_META_NETWORK_USENET      MetaNetwork = 2
 	MetaNetwork_META_NETWORK_KAD         MetaNetwork = 3
+	// META_NETWORK_SERVERS: the eD2K files servers know. They are the files
+	// shared by the users of the server asked, and the files of the servers it
+	// exchanges searches with (server.proto). No daemon is behind it. Its rows
+	// are META_KIND_ED2K and have the shape of a Kad row.
+	MetaNetwork_META_NETWORK_SERVERS MetaNetwork = 4
 )
 
 // Enum value maps for MetaNetwork.
@@ -110,12 +115,14 @@ var (
 		1: "META_NETWORK_TORRENT",
 		2: "META_NETWORK_USENET",
 		3: "META_NETWORK_KAD",
+		4: "META_NETWORK_SERVERS",
 	}
 	MetaNetwork_value = map[string]int32{
 		"META_NETWORK_UNSPECIFIED": 0,
 		"META_NETWORK_TORRENT":     1,
 		"META_NETWORK_USENET":      2,
 		"META_NETWORK_KAD":         3,
+		"META_NETWORK_SERVERS":     4,
 	}
 )
 
@@ -1884,12 +1891,13 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\x0fMETA_KIND_BT_V1\x10\x01\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V2\x10\x02\x12\x11\n" +
 	"\rMETA_KIND_NZB\x10\x03\x12\x12\n" +
-	"\x0eMETA_KIND_ED2K\x10\x04*t\n" +
+	"\x0eMETA_KIND_ED2K\x10\x04*\x8e\x01\n" +
 	"\vMetaNetwork\x12\x1c\n" +
 	"\x18META_NETWORK_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14META_NETWORK_TORRENT\x10\x01\x12\x17\n" +
 	"\x13META_NETWORK_USENET\x10\x02\x12\x14\n" +
-	"\x10META_NETWORK_KAD\x10\x03*\xd3\x02\n" +
+	"\x10META_NETWORK_KAD\x10\x03\x12\x18\n" +
+	"\x14META_NETWORK_SERVERS\x10\x04*\xd3\x02\n" +
 	"\n" +
 	"SearchSort\x12\x1b\n" +
 	"\x17SEARCH_SORT_UNSPECIFIED\x10\x00\x12\x19\n" +

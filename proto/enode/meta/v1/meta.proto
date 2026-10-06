@@ -25,8 +25,8 @@ enum MetaKind {
   META_KIND_ED2K = 4;   // eD2K/Kad file; identity is the 16-byte MD4 file hash, which is also the row's hash
 }
 
-// MetaNetwork is a catalogue network: which daemon a search goes to. A network
-// serves one or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB; Kad:
+// MetaNetwork is a catalogue network: where a search goes. A network serves one
+// or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB; Kad and servers:
 // ED2K).
 enum MetaNetwork {
   // META_NETWORK_UNSPECIFIED: every network the server offers.
@@ -34,6 +34,11 @@ enum MetaNetwork {
   META_NETWORK_TORRENT = 1;
   META_NETWORK_USENET = 2;
   META_NETWORK_KAD = 3;
+  // META_NETWORK_SERVERS: the eD2K files servers know. They are the files
+  // shared by the users of the server asked, and the files of the servers it
+  // exchanges searches with (server.proto). No daemon is behind it. Its rows
+  // are META_KIND_ED2K and have the shape of a Kad row.
+  META_NETWORK_SERVERS = 4;
 }
 
 // MetaEntry is one advertised row: a release, or one file inside it.

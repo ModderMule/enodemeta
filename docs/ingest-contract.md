@@ -659,3 +659,39 @@ additions below are about meaning rather than about wire format.
     - **A peer that predates this amendment is not harmed by it.** An older
       daemon omits the fields and proto3 reads them as zero; an older server
       ignores them.
+
+22. **A fourth network, `META_NETWORK_SERVERS` (4), in `MetaApi.Search`.** A
+    proto change, additive: one enum value. No daemon is behind this network
+    and `MetaIngest` does not change.
+
+    - **What it searches.** The eD2K files servers know: the files shared by
+      the users of the server asked, and the files of the servers it
+      exchanges searches with through `ServerSearch`
+      ([server-search-contract.md](server-search-contract.md)). A server
+      offers it by listing it in `Caps.networks`.
+    - **Its rows are `META_KIND_ED2K` and have the shape of a Kad row**
+      (amendment 19): `meta_hash` and `identity` are the file's MD4, there is
+      no metafile and no magnet, `seeders` is the complete sources and `peers`
+      the sources. One file is one release.
+    - **No row names a client.** The privacy rule of `ServerSearch` holds
+      here: a file's description and two counts, never an address, a port, a
+      client id, a user hash or a source list.
+    - **The server's own file wins** over another server's with the same hash
+      and size. The counts of the others are not added to it.
+    - **An eD2K file is answered once per search.** With several networks the
+      order is torrent, Usenet, servers, Kad, and a release whose hash and
+      size an earlier one already had is dropped. A file both a server and
+      Kad know therefore arrives as the server's row. Whenever two networks
+      with ED2K rows are searched, `total` is an upper bound and
+      `total_exact` is false.
+    - **`min_seeders` compares sources**, as amendment 20 has it for Kad, so
+      one filter means one thing for every ED2K row. `max_age_days` is
+      ignored: a server does not know a file's age, and its rows leave
+      `age_days` at 0.
+    - **Not on the eD2K wire.** Another server's file in an eD2K search answer
+      is an ordinary file with no meta tag. `FT_META_NETWORK` still has one
+      value in use, 3.
+    - **An older client** that does not know the value never asks for it. It
+      gets these rows under `META_NETWORK_UNSPECIFIED` as ED2K entries, which
+      it handles since amendment 19, and must skip an unknown value in
+      `Caps.networks`.

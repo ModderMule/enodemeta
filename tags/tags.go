@@ -168,9 +168,13 @@ const (
 	// serves a catalogue. eNode-go's own flags stop at 0x8000.
 	FlagMetaSearch = 0x10000
 
-	// FlagServerSearch is the server's bit in its own flags word, saying it
-	// answers ServerSearch for other servers. It is the next bit after
-	// FlagMetaSearch; no surveyed tree uses it.
+	// FlagServerSearch is reserved for "this server answers ServerSearch" in the
+	// server's own flags word, and must NOT be sent. Lugdunum eserver 17.14 keeps
+	// a peer that sets it, but from then on answers every peer-list request with
+	// an empty list, so the peer and what lies behind it drop out of the server
+	// mesh (measured with eNode-go's interop suite, 2026-10-07). The
+	// STServerSearch tag alone is the advertisement. The number stays allocated so
+	// that nothing else takes it.
 	FlagServerSearch = 0x20000
 
 	// SrvCapUDPMetaSearch is the opt-in inside OP_GLOBSEARCHREQ3's client tag

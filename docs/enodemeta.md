@@ -325,5 +325,7 @@ which links no works, always answers `Unimplemented`.
   `MetaApi` (`GetCaps`, `GetMetaFile`, `Search`) and `AccountApi` (`GetAuthStatus`,
   `Login`, `Logout`), reusing `MetaFile`, `MetaKind` and `Search*`. eNode-go serves
   it; see eNode-go's `docs/meta-api.md`. `MetaApi.Search` pages by release and
-  takes `SearchRequest.network` (`MetaNetwork`: torrent, Usenet, Kad, or all of
-  them by default), a field the daemons ignore since each serves one network.
+  takes `SearchRequest.network` (`MetaNetwork`: torrent, Usenet, Kad, servers, or
+  all of them by default), a field the daemons ignore since each serves one
+  network. The servers network has no daemon: it is the server's own files and
+  those of the servers it exchanges searches with (ingest contract, amendment 22).

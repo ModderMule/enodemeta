@@ -1,6 +1,6 @@
 // MetaApi and AccountApi: how an eMuleQt client talks to an eNode-go server
 // about the torrent and Usenet rows it found in an eD2K search, and how it
-// searches the torrent, Usenet and Kad catalogues directly.
+// searches the torrent, Usenet, Kad and server catalogues directly.
 //
 // This is the client-facing half of the contract (phase 4 of the
 // specification). MetaIngest runs server → daemon; these services run
@@ -101,10 +101,15 @@ type MetaApiClient interface {
 	// blended in. A server that does not offer it answers unimplemented and says
 	// so in Caps.search_available.
 	//
-	// SearchRequest.network picks torrent, Usenet or Kad, or every network the
-	// server offers (the default). With several, the networks' releases
-	// alternate, one from each in that order, and a network that runs out drops
-	// out. DATE and SIZE merge by key instead, since every network answers them.
+	// SearchRequest.network picks torrent, Usenet, Kad or servers, or every
+	// network the server offers (the default). With several, the networks'
+	// releases alternate, one from each in the order torrent, Usenet, servers,
+	// Kad, and a network that runs out drops out. DATE and SIZE merge by key
+	// instead, since every network answers them.
+	//
+	// An eD2K file is answered once per search: the same hash and size from a
+	// second network is dropped, so a file both a server and Kad know arrives as
+	// the server's row. total is then an upper bound and total_exact false.
 	//
 	// Paging counts releases, not rows: a multi-file release is several entries
 	// sharing a catalog_id, and they always arrive on the same page. Ask for the
@@ -153,10 +158,15 @@ type MetaApiHandler interface {
 	// blended in. A server that does not offer it answers unimplemented and says
 	// so in Caps.search_available.
 	//
-	// SearchRequest.network picks torrent, Usenet or Kad, or every network the
-	// server offers (the default). With several, the networks' releases
-	// alternate, one from each in that order, and a network that runs out drops
-	// out. DATE and SIZE merge by key instead, since every network answers them.
+	// SearchRequest.network picks torrent, Usenet, Kad or servers, or every
+	// network the server offers (the default). With several, the networks'
+	// releases alternate, one from each in the order torrent, Usenet, servers,
+	// Kad, and a network that runs out drops out. DATE and SIZE merge by key
+	// instead, since every network answers them.
+	//
+	// An eD2K file is answered once per search: the same hash and size from a
+	// second network is dropped, so a file both a server and Kad know arrives as
+	// the server's row. total is then an upper bound and total_exact false.
 	//
 	// Paging counts releases, not rows: a multi-file release is several entries
 	// sharing a catalog_id, and they always arrive on the same page. Ask for the

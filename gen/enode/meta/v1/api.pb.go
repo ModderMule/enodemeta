@@ -1,6 +1,6 @@
 // MetaApi and AccountApi: how an eMuleQt client talks to an eNode-go server
 // about the torrent and Usenet rows it found in an eD2K search, and how it
-// searches the torrent, Usenet and Kad catalogues directly.
+// searches the torrent, Usenet, Kad and server catalogues directly.
 //
 // This is the client-facing half of the contract (phase 4 of the
 // specification). MetaIngest runs server → daemon; these services run
@@ -272,8 +272,8 @@ type Caps struct {
 	// lets anyone search but only accounts download.
 	SearchRequiresAccount bool `protobuf:"varint,9,opt,name=search_requires_account,json=searchRequiresAccount,proto3" json:"search_requires_account,omitempty"`
 	// networks are the catalogue networks MetaApi.Search can query, for a
-	// client's torrent / Usenet / Kad / all selector. Empty when search is not
-	// served.
+	// client's torrent / Usenet / Kad / servers / all selector. Empty when
+	// search is not served.
 	Networks      []MetaNetwork `protobuf:"varint,10,rep,packed,name=networks,proto3,enum=enode.meta.v1.MetaNetwork" json:"networks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

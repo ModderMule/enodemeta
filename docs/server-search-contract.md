@@ -165,6 +165,7 @@ Every error carries an `ErrorInfo` detail (`api.proto`) with a `msg_code`.
 | `unimplemented` | The service is off | `serversearch.disabled` |
 | `unimplemented` | `BrowseFiles` is off | `serversearch.browse_disabled` |
 | `unimplemented` | `SearchFiles` is off | `search.disabled` |
+| `unavailable` | The server could not read its catalogue | `search.unavailable` |
 
 Which part of a credential was wrong is not a caller's business: an
 authentication failure says nothing more than that.
@@ -199,11 +200,18 @@ A server learns where another one serves `ServerSearch` in one of two ways:
 | `ST_SERVER_SEARCH` | `0xA0` | string | The service's base URL |
 | `ST_SERVER_SEARCH_FP` | `0xA1` | string | `sha256/<base64>` of the certificate's SubjectPublicKeyInfo |
 
-It also sets `FlagServerSearch` (`0x20000`) in its server flags word, so a
-server can tell who implements the service before it asks for a description.
-The numbers are in `tags/tags.go`. A reader that does not know a tag skips it,
-and a reader that does not know a flag bit ignores it; that is what both eMule
-client trees and the original eserver do.
+The tag is the whole advertisement. A reader that does not know a tag skips
+it; that is what both eMule client trees and the original eserver do.
+
+**No flag bit is sent.** `FlagServerSearch` (`0x20000`, `tags/tags.go`) is
+reserved for the server flags word and must not be set. Lugdunum eserver 17.14
+keeps a peer that sets it but then answers every peer-list request with an empty
+list, which removes that peer from the server mesh.
+
+**A caller dials the address it already trusts.** The URL in the tag is the
+peer's own claim. A caller takes the port, the host header and the TLS name from
+it, and connects to the address its server list verified the peer at. Following
+the URL's host instead would let any server point another at a third party.
 
 The fingerprint is how a server on a bare IP address is trusted without a
 certificate authority: the caller pins it, in the form `ST_META_API_FP` already
