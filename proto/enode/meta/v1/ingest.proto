@@ -178,4 +178,23 @@ message GetInfoResponse {
   // network_files is the daemon's estimate of how many files the whole
   // network holds, which is not what it has catalogued. Zero is no estimate.
   uint64 network_files = 15;
+
+  // network_users_seen is how many users the daemon has seen in the network
+  // over network_users_seen_window, counted the way network_users is: the
+  // distinct node ids met near its own id, scaled to the whole keyspace. It
+  // counts ids, and a user whose id changed is counted once for each. Zero is
+  // no estimate.
+  uint64 network_users_seen = 16;
+
+  // network_users_seen_day is the same count over the last 24 hours.
+  uint64 network_users_seen_day = 17;
+
+  // network_users_seen_window is the length of the window in seconds. Zero
+  // says the daemon does not count seen users, and the other three are zero.
+  uint64 network_users_seen_window = 18;
+
+  // network_users_seen_since is when the count began, in Unix seconds. Later
+  // than the window's start, the window is not full yet and the count reads
+  // low. Zero is unknown.
+  uint64 network_users_seen_since = 19;
 }

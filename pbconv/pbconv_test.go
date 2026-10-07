@@ -218,6 +218,11 @@ func TestDaemonInfoRoundTrip(t *testing.T) {
 		NetworkUsers:             412000,
 		NetworkUsersExperimental: 365000,
 		NetworkFiles:             44496000,
+
+		NetworkUsersSeen:       1930000,
+		NetworkUsersSeenDay:    587000,
+		NetworkUsersSeenWindow: 2592000,
+		NetworkUsersSeenSince:  1791072000,
 	}
 	t.Logf("input:  %+v", info)
 

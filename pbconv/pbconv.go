@@ -308,6 +308,11 @@ func DaemonInfoToProto(info model.DaemonInfo) *metav1.GetInfoResponse {
 		NetworkUsers:             info.NetworkUsers,
 		NetworkUsersExperimental: info.NetworkUsersExperimental,
 		NetworkFiles:             info.NetworkFiles,
+
+		NetworkUsersSeen:       info.NetworkUsersSeen,
+		NetworkUsersSeenDay:    info.NetworkUsersSeenDay,
+		NetworkUsersSeenWindow: info.NetworkUsersSeenWindow,
+		NetworkUsersSeenSince:  info.NetworkUsersSeenSince,
 	}
 }
 
@@ -340,6 +345,11 @@ func DaemonInfoFromProto(res *metav1.GetInfoResponse) model.DaemonInfo {
 		NetworkUsers:             res.GetNetworkUsers(),
 		NetworkUsersExperimental: res.GetNetworkUsersExperimental(),
 		NetworkFiles:             res.GetNetworkFiles(),
+
+		NetworkUsersSeen:       res.GetNetworkUsersSeen(),
+		NetworkUsersSeenDay:    res.GetNetworkUsersSeenDay(),
+		NetworkUsersSeenWindow: res.GetNetworkUsersSeenWindow(),
+		NetworkUsersSeenSince:  res.GetNetworkUsersSeenSince(),
 	}
 }
 

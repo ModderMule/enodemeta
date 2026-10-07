@@ -435,6 +435,17 @@ type DaemonInfo struct {
 	NetworkUsers             uint64
 	NetworkUsersExperimental uint64
 	NetworkFiles             uint64
+
+	// NetworkUsersSeen is how many users the daemon has seen over
+	// NetworkUsersSeenWindow, and NetworkUsersSeenDay over the last 24 hours:
+	// distinct node ids, counted the way NetworkUsers is. The window is in
+	// seconds, and zero says the daemon does not count them.
+	// NetworkUsersSeenSince is when the count began in Unix seconds, zero when
+	// unknown.
+	NetworkUsersSeen       uint64
+	NetworkUsersSeenDay    uint64
+	NetworkUsersSeenWindow uint64
+	NetworkUsersSeenSince  uint64
 }
 
 // -- internals ---------------------------------------------------------------

@@ -307,7 +307,9 @@ the number of files the catalogued releases hold (`files`), the indexer name it
 puts in every row, whether search is available, whether the enhanced search
 is (`enhanced_search_available`, amendment 15), and the daemon's estimates of
 the size of the network it crawls (`network_users`,
-`network_users_experimental` and `network_files`, amendment 21).
+`network_users_experimental` and `network_files`, amendment 21) and of the
+users it has seen there over a window (`network_users_seen` and its three
+companions, amendment 23).
 
 `files` counts files, not releases: a multi-file release yields one row per
 selectable file. It is the figure an eD2K server adds to its own file total when
@@ -438,7 +440,8 @@ additions below are about meaning rather than about wire format.
     matching release. The rule is amendment 10's, generalised: **a daemon
     ignores a filter or sort its network does not have** — a Usenet daemon drops
     `alive`, `min_leechers`, `min_popularity`, `seen_within_days` and the
-    torrent sorts; a torrent daemon drops `categories`, `groups`,
+    torrent sorts (a Kad daemon answers `alive`, against sources: amendment
+    20); a torrent daemon drops `categories`, `groups`,
     `min_completion`, `min_grabs`, `indexed_within_days` and the Usenet sorts —
     and answers an unknown or foreign sort in relevance order. `sort_ascending`
     only applies to attribute sorts. Across networks, only `DATE` and `SIZE`
@@ -618,7 +621,9 @@ additions below are about meaning rather than about wire format.
       place, so paging and `total` are the daemon's.
 
 20. **A Kad daemon answers `Search.min_seeders` against sources**, correcting
-    amendment 17, which said complete sources. No proto change.
+    amendment 17, which said complete sources. No proto change. It answers
+    `Search.alive` against sources too, where it used to drop it: a file is
+    alive when its source count is above zero, complete or not.
 
     - **Why.** Kad carries no count of complete sources. Stock eMule's
       keyword publish sends one count, `TAG_SOURCES`, and no
@@ -695,3 +700,23 @@ additions below are about meaning rather than about wire format.
       gets these rows under `META_NETWORK_UNSPECIFIED` as ED2K entries, which
       it handles since amendment 19, and must skip an unknown value in
       `Caps.networks`.
+
+23. **`GetInfo` carries how many users the daemon has seen over a window.**
+    Four fields, `network_users_seen` (16), `network_users_seen_day` (17),
+    `network_users_seen_window` (18) and `network_users_seen_since` (19).
+
+    - **Counted the way `network_users` is**, from the daemon's routing table
+      near its own id, but over time: the distinct node ids met there, scaled
+      to the whole keyspace. `network_users_seen` covers the window and
+      `network_users_seen_day` the last 24 hours.
+    - **They count ids, not people.** A user whose node id changed, which a
+      new address brings about, is counted once for each. The longer the
+      window, the further the figure lies above the users behind it.
+    - **`network_users_seen_window` is the switch.** It is the window in
+      seconds, and zero says the daemon does not count seen users; the other
+      three are then zero and a consumer shows nothing.
+    - **`network_users_seen_since` says how much of the window is behind the
+      count.** It is when counting began, in Unix seconds. While it is later
+      than the window's start the count reads low.
+    - **A peer that predates this amendment is not harmed by it**, as in
+      amendment 21.

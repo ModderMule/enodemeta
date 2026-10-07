@@ -499,9 +499,24 @@ type GetInfoResponse struct {
 	NetworkUsersExperimental uint64 `protobuf:"varint,14,opt,name=network_users_experimental,json=networkUsersExperimental,proto3" json:"network_users_experimental,omitempty"`
 	// network_files is the daemon's estimate of how many files the whole
 	// network holds, which is not what it has catalogued. Zero is no estimate.
-	NetworkFiles  uint64 `protobuf:"varint,15,opt,name=network_files,json=networkFiles,proto3" json:"network_files,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	NetworkFiles uint64 `protobuf:"varint,15,opt,name=network_files,json=networkFiles,proto3" json:"network_files,omitempty"`
+	// network_users_seen is how many users the daemon has seen in the network
+	// over network_users_seen_window, counted the way network_users is: the
+	// distinct node ids met near its own id, scaled to the whole keyspace. It
+	// counts ids, and a user whose id changed is counted once for each. Zero is
+	// no estimate.
+	NetworkUsersSeen uint64 `protobuf:"varint,16,opt,name=network_users_seen,json=networkUsersSeen,proto3" json:"network_users_seen,omitempty"`
+	// network_users_seen_day is the same count over the last 24 hours.
+	NetworkUsersSeenDay uint64 `protobuf:"varint,17,opt,name=network_users_seen_day,json=networkUsersSeenDay,proto3" json:"network_users_seen_day,omitempty"`
+	// network_users_seen_window is the length of the window in seconds. Zero
+	// says the daemon does not count seen users, and the other three are zero.
+	NetworkUsersSeenWindow uint64 `protobuf:"varint,18,opt,name=network_users_seen_window,json=networkUsersSeenWindow,proto3" json:"network_users_seen_window,omitempty"`
+	// network_users_seen_since is when the count began, in Unix seconds. Later
+	// than the window's start, the window is not full yet and the count reads
+	// low. Zero is unknown.
+	NetworkUsersSeenSince uint64 `protobuf:"varint,19,opt,name=network_users_seen_since,json=networkUsersSeenSince,proto3" json:"network_users_seen_since,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *GetInfoResponse) Reset() {
@@ -639,6 +654,34 @@ func (x *GetInfoResponse) GetNetworkFiles() uint64 {
 	return 0
 }
 
+func (x *GetInfoResponse) GetNetworkUsersSeen() uint64 {
+	if x != nil {
+		return x.NetworkUsersSeen
+	}
+	return 0
+}
+
+func (x *GetInfoResponse) GetNetworkUsersSeenDay() uint64 {
+	if x != nil {
+		return x.NetworkUsersSeenDay
+	}
+	return 0
+}
+
+func (x *GetInfoResponse) GetNetworkUsersSeenWindow() uint64 {
+	if x != nil {
+		return x.NetworkUsersSeenWindow
+	}
+	return 0
+}
+
+func (x *GetInfoResponse) GetNetworkUsersSeenSince() uint64 {
+	if x != nil {
+		return x.NetworkUsersSeenSince
+	}
+	return 0
+}
+
 var File_enode_meta_v1_ingest_proto protoreflect.FileDescriptor
 
 const file_enode_meta_v1_ingest_proto_rawDesc = "" +
@@ -667,7 +710,7 @@ const file_enode_meta_v1_ingest_proto_rawDesc = "" +
 	"\n" +
 	"catalog_id\x18\x01 \x01(\tR\tcatalogId\x12\x1a\n" +
 	"\bidentity\x18\x02 \x01(\fR\bidentity\"\x10\n" +
-	"\x0eGetInfoRequest\"\xc3\x04\n" +
+	"\x0eGetInfoRequest\"\x9a\x06\n" +
 	"\x0fGetInfoResponse\x12\x16\n" +
 	"\x06daemon\x18\x01 \x01(\tR\x06daemon\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12)\n" +
@@ -686,7 +729,11 @@ const file_enode_meta_v1_ingest_proto_rawDesc = "" +
 	"\x19enhanced_search_available\x18\f \x01(\bR\x17enhancedSearchAvailable\x12#\n" +
 	"\rnetwork_users\x18\r \x01(\x04R\fnetworkUsers\x12<\n" +
 	"\x1anetwork_users_experimental\x18\x0e \x01(\x04R\x18networkUsersExperimental\x12#\n" +
-	"\rnetwork_files\x18\x0f \x01(\x04R\fnetworkFiles*R\n" +
+	"\rnetwork_files\x18\x0f \x01(\x04R\fnetworkFiles\x12,\n" +
+	"\x12network_users_seen\x18\x10 \x01(\x04R\x10networkUsersSeen\x123\n" +
+	"\x16network_users_seen_day\x18\x11 \x01(\x04R\x13networkUsersSeenDay\x129\n" +
+	"\x19network_users_seen_window\x18\x12 \x01(\x04R\x16networkUsersSeenWindow\x127\n" +
+	"\x18network_users_seen_since\x18\x13 \x01(\x04R\x15networkUsersSeenSince*R\n" +
 	"\bChangeOp\x12\x19\n" +
 	"\x15CHANGE_OP_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10CHANGE_OP_UPSERT\x10\x01\x12\x15\n" +
