@@ -84,13 +84,14 @@ by three orders of magnitude.
 
 ## Identity: `catalog_id`
 
-A release is named by `bt:v1:<40 hex>`, `bt:v2:<64 hex>`, `nzb:<64 hex>` or
-`ed2k:<32 hex>`, uppercase hex, formatted and parsed only by `btid`. A hybrid
+A release is named by `bt:v1:<40 hex>`, `bt:v2:<64 hex>`, `nzb:<64 hex>`,
+`ed2k:<32 hex>` or `web:<64 hex>`, uppercase hex, formatted and parsed only by `btid`. A hybrid
 torrent is keyed by its **v1** hash, because that is the one both versions of the
 network agree on; keying it by v2 would catalogue the same release twice. A
 Usenet release is keyed by the canonical NZB digest of
 [amendment 8](#amendments-to-the-enode-go-plan-document), which is recomputable
-from the `.nzb` alone.
+from the `.nzb` alone. A web release is keyed by the canonical link-set digest
+of amendment 24, which is recomputable from its links alone.
 
 The id is unique per daemon, not globally. A consumer keys rows by
 `(daemon, catalog_id)`, taking the daemon name from `GetInfo`.
@@ -220,7 +221,8 @@ For a torrent the response is a complete `.torrent`: the stored info dictionary
 wrapped as `d4:info…e`, with `catalog.trackers` added as an announce-list if the
 operator configured any. A DHT-only crawl has none, and a metafile with no
 trackers is correct rather than broken — the infohash is enough to find the
-swarm. For an NZB it is the stored document verbatim; see amendment 11.
+swarm. For an NZB it is the stored document verbatim; see amendment 11. For a
+web release it is the link container of amendment 24, `text/uri-list`.
 
 A release the keyword filter hides answers exactly as one that was never
 catalogued: `not_found`, "no release …". The answer must not tell a caller that
@@ -720,3 +722,51 @@ additions below are about meaning rather than about wire format.
       than the window's start the count reads low.
     - **A peer that predates this amendment is not harmed by it**, as in
       amendment 21.
+
+24. **A fifth kind, `META_KIND_WEB` (5), and a fifth network,
+    `META_NETWORK_WEB` (5).** A web release is the set of links found on one
+    page: file-hoster downloads, stream pages and direct media. A daemon that
+    crawls the web serves it over the same five calls.
+
+    - **A row carries no link.** `magnet` is empty and `FlagMagnetOnly` is
+      never set; `Entry.Validate` refuses a web row with either. The reason is
+      the one `FT_META_RESERVED` was retired for: a URL in a row is a URL the
+      server chose and every searching client would hold. The links are the
+      row's metafile instead, fetched when a user acts on the row.
+    - **The metafile is a link container**, `text/uri-list` (RFC 2483), which
+      `weblinks` reads and writes. One link per line; a line starting with `#`
+      is a comment, and a comment of the form `#key: value` is a hint. `file`,
+      `name`, `size` and `hoster` describe the next link; `title` and
+      `protected` describe the set. Links sharing a `file` number are mirrors
+      of one file. An unknown hint is skipped.
+    - **The identity is the canonical link-set digest**, 32 bytes: SHA-256 over
+      `"web1\n"` followed by each distinct canonical link and a `\n`, sorted
+      by their bytes. The thirteen rules are in `weblinks/identity.go` and
+      pinned by `testdata/web-identity-vectors.json`. Only `http` and `https`
+      links are accepted; scheme and host are lowered, a fragment and a default
+      port are dropped, and everything else is kept byte for byte.
+    - **Hints are outside the identity.** A daemon that learns a size or a name
+      later republishes the same release. A link added or lost is a different
+      set: the daemon retracts the old release and publishes the new one.
+    - **`VerifyMetaFile` covers it**, so a client checks a fetched container
+      against the row that advertised it, as it does a torrent or an NZB. That
+      proves the container is the one the row described. It does not prove the
+      links are what the page held: the daemon supplies both.
+    - **The catalogue id is `web:<64 HEX>`**, the digest in uppercase hex,
+      formatted and parsed by `btid`.
+    - **Every web row is path-authoritative.** Nothing fixes the order of files
+      on a page, so `Mint` sets the flag for the kind as it does for an NZB.
+      `file_index` is the link's `file` number and `file_count` the number of
+      distinct ones, whatever the mirror count; the whole-set row exists when
+      that is above 1.
+    - **`seeders` is the number of mirrors last found alive, and `peers` is
+      0.** `size` must be known: eNode-go drops a row of size 0, so a daemon
+      does not publish a release until it has resolved one. `type` comes from
+      the file names, `indexer` names the site the page was on.
+    - **The kind nibble takes the value 5.** A meta hash of that kind parses on
+      a peer with this amendment and is refused as an unknown kind by one
+      without it, which drops the row and nothing else.
+    - **A peer that predates this amendment is not harmed by it.** A server
+      maps the unknown kind to unspecified and drops the row, an older client
+      never asks for network 5 and must skip an unknown value in
+      `Caps.networks`, and no existing message changes shape.

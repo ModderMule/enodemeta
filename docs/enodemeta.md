@@ -23,13 +23,14 @@ Its only dependencies are `google.golang.org/protobuf` and
 |---|---|
 | `proto/`, `gen/` | The `.proto` files and the generated protobuf + connect code |
 | `metahash/` | The eD2K pseudo-hash: minting, parsing, cross-checking, verification |
-| `btid/` | The `ed2k:`/`bt:v1:`/`bt:v2:`/`nzb:` id namespace, which is also the `catalog_id` format |
+| `btid/` | The `ed2k:`/`bt:v1:`/`bt:v2:`/`nzb:`/`web:` id namespace, which is also the `catalog_id` format |
 | `model/` | Domain types with no protobuf imports |
 | `pbconv/` | Conversions between `model` and the generated types |
 | `tags/` | The `FT_META_*` tag ids, capability bits, flags, `MaxSources` |
 | `bencode/` | A decoder that keeps raw spans, and an encoder |
 | `torrentmeta/` | Torrent identity: v1, v2 and hybrid parsing, file trees, padding |
 | `nzbmeta/` | NZB identity: parsing, the canonical digest, a deterministic writer, subjects, PAR2, shortfall |
+| `weblinks/` | Web link identity: the `text/uri-list` container, link canonicalisation and the canonical digest |
 | `magnet/` | Magnet construction, including BEP 53 `so=` |
 | `ed2klink/` | eD2K file links, with the optional AICH hash: what a Kad row offers instead of a magnet |
 | `filetype/` | Extension to eD2K file-type string; `Dominant` types a whole-set row by the type holding most of the release's bytes |
@@ -146,6 +147,9 @@ every row's meta hash beside it. Regenerate with `go test . -update`.
 
 `testdata/nzb-identity-vectors.json` pins the canonical NZB digest. Regenerate
 with `go test ./nzbmeta -update`.
+
+`testdata/web-identity-vectors.json` pins link canonicalisation and the
+canonical link-set digest. Regenerate with `go test ./weblinks -update`.
 
 ## Torrent identity
 

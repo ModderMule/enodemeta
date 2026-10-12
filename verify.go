@@ -15,6 +15,7 @@ import (
 	"github.com/ModderMule/enodemeta/metahash"
 	"github.com/ModderMule/enodemeta/nzbmeta"
 	"github.com/ModderMule/enodemeta/torrentmeta"
+	"github.com/ModderMule/enodemeta/weblinks"
 )
 
 // Errors returned when a metafile cannot be checked against a hash.
@@ -38,7 +39,8 @@ var (
 // advertised them (§8.4).
 //
 //	bytes  := GetMetaFile(metaHash)
-//	ident  := kind == nzb ? canonicalNzbDigest(bytes) : infoHashOf(bytes)
+//	ident  := kind == nzb ? canonicalNzbDigest(bytes)
+//	        : kind == web ? canonicalLinkSetDigest(bytes) : infoHashOf(bytes)
 //	if fold10(ident) != metaHash[6..15] { reject }
 //
 // Be clear about what this buys. The same server supplies both the row and the
@@ -81,6 +83,9 @@ func VerifyMetaFile(hash metahash.Hash, metafile []byte) error {
 // rather than over the bytes. That is what lets a daemon serve a copy with the
 // <head> stripped — redacting a password — and still have the client's fold
 // check pass.
+//
+// For a web link set it is the canonical digest over the links themselves, so
+// the hints a container carries beside them can change without changing it.
 func IdentityOf(kind metahash.Kind, metafile []byte) ([]byte, error) {
 	switch kind {
 	case metahash.KindBTV1, metahash.KindBTV2:
@@ -98,6 +103,14 @@ func IdentityOf(kind metahash.Kind, metafile []byte) ([]byte, error) {
 
 	case metahash.KindNZB:
 		identity, err := nzbmeta.IdentityOf(metafile)
+		if err != nil {
+			return nil, fmt.Errorf("enodemeta: %w", err)
+		}
+
+		return identity[:], nil
+
+	case metahash.KindWeb:
+		identity, err := weblinks.IdentityOf(metafile)
 		if err != nil {
 			return nil, fmt.Errorf("enodemeta: %w", err)
 		}

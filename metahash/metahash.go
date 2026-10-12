@@ -78,6 +78,11 @@ const (
 	// which already belongs in the hash slot, so it is the one kind that never
 	// gets a meta hash: see Native.
 	KindED2K Kind = 4
+
+	// KindWeb is a set of web links: file-hoster downloads, stream pages and
+	// direct media found on one page. Its identity is the 32-byte canonical
+	// link-set digest, which weblinks.Identity computes.
+	KindWeb Kind = 5
 )
 
 // String names the kind.
@@ -91,6 +96,8 @@ func (k Kind) String() string {
 		return "nzb"
 	case KindED2K:
 		return "ed2k"
+	case KindWeb:
+		return "web"
 	default:
 		return fmt.Sprintf("kind(%d)", uint8(k))
 	}
@@ -98,7 +105,7 @@ func (k Kind) String() string {
 
 // Valid reports whether the kind is one this version defines.
 func (k Kind) Valid() bool {
-	return k == KindBTV1 || k == KindBTV2 || k == KindNZB || k == KindED2K
+	return k == KindBTV1 || k == KindBTV2 || k == KindNZB || k == KindED2K || k == KindWeb
 }
 
 // Native reports whether a row of this kind is a real eD2K file, whose hash
@@ -124,7 +131,7 @@ func (k Kind) IdentityLen() int {
 	switch k {
 	case KindBTV1:
 		return 20
-	case KindBTV2, KindNZB:
+	case KindBTV2, KindNZB, KindWeb:
 		return 32
 	case KindED2K:
 		return 16

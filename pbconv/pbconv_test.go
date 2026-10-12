@@ -54,6 +54,7 @@ func TestKindRoundTrip(t *testing.T) {
 		metahash.KindBTV2,
 		metahash.KindNZB,
 		metahash.KindED2K,
+		metahash.KindWeb,
 	}
 
 	for _, k := range kinds {

@@ -146,6 +146,15 @@ func (e Entry) Validate() error {
 		return fmt.Errorf("%w: an nzb row cannot be magnet-only", ErrInvalidEntry)
 	}
 
+	// A web row is the same case as an NZB row. Its links are its metafile, and a
+	// link in a row would hand every client a URL to open that the server chose.
+	if e.Kind == metahash.KindWeb && e.Magnet != "" {
+		return fmt.Errorf("%w: a web row cannot carry a magnet", ErrInvalidEntry)
+	}
+	if e.Kind == metahash.KindWeb && e.Flags&FlagMagnetOnly != 0 {
+		return fmt.Errorf("%w: a web row cannot be magnet-only", ErrInvalidEntry)
+	}
+
 	// A native row has no hash to mint, and its own rules instead.
 	if e.Kind.Native() {
 		return e.validateNative()

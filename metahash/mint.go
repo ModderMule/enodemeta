@@ -27,8 +27,9 @@ type MintInput struct {
 	// change the hash of rows that are otherwise the same.
 	FileCount uint32
 
-	// PathAuthoritative forces the flag on. It is implied for an NZB, whose
-	// file order is not fixed, and for any index past 65535 (§3.5).
+	// PathAuthoritative forces the flag on. It is implied for an NZB and for a
+	// web link set, whose file order is not fixed, and for any index past 65535
+	// (§3.5).
 	PathAuthoritative bool
 
 	// Protected marks a password-protected or obfuscated release.
@@ -73,7 +74,7 @@ func Mint(in MintInput) (Hash, error) {
 	// The flag is about whether the *index* can be trusted to find the file, so
 	// the whole-set row — which selects no file — never needs it.
 	tooWide := !wholeSet && in.FileIndex > uint32(^uint16(0))
-	if in.PathAuthoritative || in.Kind == KindNZB || tooWide {
+	if in.PathAuthoritative || in.Kind == KindNZB || in.Kind == KindWeb || tooWide {
 		flags |= FlagPathAuthoritative
 	}
 

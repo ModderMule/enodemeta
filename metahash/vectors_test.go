@@ -185,6 +185,7 @@ func buildVectorFile(t *testing.T) vectorFile {
 	v1b := sha1.Sum([]byte("enode.meta.v1 vector torrent 2"))
 	v2 := sha256.Sum256([]byte("enode.meta.v1 vector torrent v2"))
 	nzb := sha256.Sum256([]byte("enode.meta.v1 vector nzb"))
+	web := sha256.Sum256([]byte("enode.meta.v1 vector web"))
 
 	out := vectorFile{
 		Scheme: "enode.meta.v1",
@@ -224,6 +225,9 @@ func buildVectorFile(t *testing.T) vectorFile {
 		{"bt-v2, multi-file, path authoritative", KindBTV2, FlagMultiFile | FlagPathAuthoritative, 3, v2[:]},
 		{"nzb, single file", KindNZB, FlagPathAuthoritative, 0, nzb[:]},
 		{"nzb, multi-file, protected", KindNZB, FlagMultiFile | FlagPathAuthoritative | FlagProtected, 2, nzb[:]},
+		{"web, single file", KindWeb, FlagPathAuthoritative, 0, web[:]},
+		{"web, multi-file, file 1", KindWeb, FlagMultiFile | FlagPathAuthoritative, 1, web[:]},
+		{"web, multi-file, the whole-set row", KindWeb, FlagMultiFile, FileIndexWholeSet32, web[:]},
 	}
 
 	// Every flag combination that leaves the reserved bit clear, so a port
@@ -276,7 +280,8 @@ func buildVectorFile(t *testing.T) vectorFile {
 		{"a wrong second magic byte", mutate(func(h *Hash) { h[1] = 0x2C }), "magic must be ED 2B"},
 		{"an unknown scheme version", mutate(func(h *Hash) { h[2] = 0x02 }), "a client must silently drop a row whose version it does not know"},
 		{"kind 0", mutate(func(h *Hash) { h[3] &= 0x0F }), "kind 0 is reserved"},
-		{"an unknown kind", mutate(func(h *Hash) { h[3] = 0xF0 | (h[3] & 0x0F) }), "kind must be 1, 2 or 3 in this version"},
+		{"an unknown kind", mutate(func(h *Hash) { h[3] = 0xF0 | (h[3] & 0x0F) }), "kind must be 1, 2, 3 or 5 in this version"},
+		{"the native kind", mutate(func(h *Hash) { h[3] = 0x40 | (h[3] & 0x0F) }), "kind 4 is an eD2K file, whose hash is its own MD4 and never a meta hash"},
 		{"the reserved flag set", mutate(func(h *Hash) { h[3] |= 0x08 }), "flag 0x8 is reserved and must be zero"},
 		{"an ordinary MD4 file hash", strings.ToUpper(hex.EncodeToString(bytes.Repeat([]byte{0x41}, Size))), "not a meta hash at all"},
 		{"a truncated hash", strings.ToUpper(hex.EncodeToString(valid[:15])), "a meta hash is exactly 16 bytes"},

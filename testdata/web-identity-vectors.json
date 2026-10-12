@@ -1,0 +1,208 @@
+{
+  "scheme": "enode.meta.v1",
+  "note": "Cross-repository test vectors for the canonical web link-set digest (enodemeta weblinks/identity.go holds the rules, and docs/ingest-contract.md amendment 24 the reasons). Every implementation — eNode-go, eMuleQt and the crawler daemons — must reproduce this file exactly. Regenerate with: go test ./weblinks -update",
+  "identityPrefixText": "web1\n",
+  "canonical": [
+    {
+      "label": "scheme and host are lowered, the path is not",
+      "link": "HTTPS://Host.TEST/F/Abc",
+      "canonical": "https://host.test/F/Abc"
+    },
+    {
+      "label": "a fragment is dropped",
+      "link": "https://host.test/f/abc#player",
+      "canonical": "https://host.test/f/abc"
+    },
+    {
+      "label": "the default https port is dropped",
+      "link": "https://host.test:443/f",
+      "canonical": "https://host.test/f"
+    },
+    {
+      "label": "the default http port is dropped",
+      "link": "http://host.test:80/f",
+      "canonical": "http://host.test/f"
+    },
+    {
+      "label": "another port stays",
+      "link": "https://host.test:8443/f",
+      "canonical": "https://host.test:8443/f"
+    },
+    {
+      "label": "an empty port is dropped",
+      "link": "https://host.test:/f",
+      "canonical": "https://host.test/f"
+    },
+    {
+      "label": "no path becomes a slash",
+      "link": "https://host.test",
+      "canonical": "https://host.test/"
+    },
+    {
+      "label": "a query with no path gets one",
+      "link": "https://host.test?id=1",
+      "canonical": "https://host.test/?id=1"
+    },
+    {
+      "label": "percent escapes are kept as written",
+      "link": "https://host.test/a%2fb%2Fc",
+      "canonical": "https://host.test/a%2fb%2Fc"
+    },
+    {
+      "label": "the query is not reordered",
+      "link": "https://host.test/?b=2\u0026a=1",
+      "canonical": "https://host.test/?b=2\u0026a=1"
+    },
+    {
+      "label": "an IPv6 literal loses a default port and keeps its colons",
+      "link": "http://[2001:DB8::1]:80/f",
+      "canonical": "http://[2001:db8::1]/f"
+    }
+  ],
+  "identity": [
+    {
+      "label": "the baseline: one file, one link",
+      "note": "Read this one first.",
+      "container": "#title: Some Release 1080p\r\n#file: 0\r\n#name: some.release.mkv\r\n#size: 1073741824\r\n#hoster: examplehost\r\nhttps://examplehost.test/f/abc123\r\n",
+      "links": 1,
+      "files": 1,
+      "protected": false,
+      "preimageText": "web1\nhttps://examplehost.test/f/abc123\n",
+      "preimageHex": "776562310a68747470733a2f2f6578616d706c65686f73742e746573742f662f6162633132330a",
+      "digestHex": "bdc46732203d345c94c229699a28f32b6d05a8379c5bf61d7c2dc3c0c1caeee2",
+      "fold10Hex": "e6140b07af3b9a99fd3f",
+      "catalogId": "BDC46732203D345C94C229699A28F32B6D05A8379C5BF61D7C2DC3C0C1CAEEE2",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B01520000E6140B07AF3B9A99FD3F"
+      ]
+    },
+    {
+      "label": "two files, one of them mirrored",
+      "note": "Three links and two files: a mirror is not a file.",
+      "container": "#title: Some Release 1080p\r\n#file: 0\r\n#name: some.release.part1.rar\r\n#hoster: examplehost\r\nhttps://examplehost.test/f/abc123\r\n#file: 0\r\n#hoster: otherhost\r\nhttps://otherhost.test/d/xyz789\r\n#file: 1\r\n#name: some.release.part2.rar\r\n#hoster: examplehost\r\nhttps://examplehost.test/f/def456\r\n",
+      "links": 3,
+      "files": 2,
+      "protected": false,
+      "preimageText": "web1\nhttps://examplehost.test/f/abc123\nhttps://examplehost.test/f/def456\nhttps://otherhost.test/d/xyz789\n",
+      "preimageHex": "776562310a68747470733a2f2f6578616d706c65686f73742e746573742f662f6162633132330a68747470733a2f2f6578616d706c65686f73742e746573742f662f6465663435360a68747470733a2f2f6f74686572686f73742e746573742f642f78797a3738390a",
+      "digestHex": "36fc0f169baac3456df9afcaf41f6d12b5ec1958e44cc59a21e33da2315274a2",
+      "fold10Hex": "09d83e93d75b4b0b45f3",
+      "catalogId": "36FC0F169BAAC3456DF9AFCAF41F6D12B5EC1958E44CC59A21E33DA2315274A2",
+      "wholeSetMetaHashHex": "ED2B0153FFFF09D83E93D75B4B0B45F3",
+      "fileMetaHashHex": [
+        "ED2B0153000009D83E93D75B4B0B45F3",
+        "ED2B0153010009D83E93D75B4B0B45F3"
+      ]
+    },
+    {
+      "label": "a protected release",
+      "note": "The protected hint is outside the identity and inside the hash's flag nibble.",
+      "container": "#protected: 1\r\n#title: Some Release 1080p\r\n#file: 0\r\n#name: some.release.part1.rar\r\n#hoster: examplehost\r\nhttps://examplehost.test/f/abc123\r\n#file: 0\r\n#hoster: otherhost\r\nhttps://otherhost.test/d/xyz789\r\n#file: 1\r\n#name: some.release.part2.rar\r\n#hoster: examplehost\r\nhttps://examplehost.test/f/def456\r\n",
+      "links": 3,
+      "files": 2,
+      "protected": true,
+      "preimageText": "web1\nhttps://examplehost.test/f/abc123\nhttps://examplehost.test/f/def456\nhttps://otherhost.test/d/xyz789\n",
+      "preimageHex": "776562310a68747470733a2f2f6578616d706c65686f73742e746573742f662f6162633132330a68747470733a2f2f6578616d706c65686f73742e746573742f662f6465663435360a68747470733a2f2f6f74686572686f73742e746573742f642f78797a3738390a",
+      "digestHex": "36fc0f169baac3456df9afcaf41f6d12b5ec1958e44cc59a21e33da2315274a2",
+      "fold10Hex": "09d83e93d75b4b0b45f3",
+      "catalogId": "36FC0F169BAAC3456DF9AFCAF41F6D12B5EC1958E44CC59A21E33DA2315274A2",
+      "wholeSetMetaHashHex": "ED2B0157FFFF09D83E93D75B4B0B45F3",
+      "fileMetaHashHex": [
+        "ED2B0157000009D83E93D75B4B0B45F3",
+        "ED2B0157010009D83E93D75B4B0B45F3"
+      ]
+    },
+    {
+      "label": "bare links, no hints",
+      "note": "Every link is file 0, so this is one file with two mirrors.",
+      "container": "https://examplehost.test/f/abc123\nhttps://otherhost.test/d/xyz789\n",
+      "links": 2,
+      "files": 1,
+      "protected": false,
+      "preimageText": "web1\nhttps://examplehost.test/f/abc123\nhttps://otherhost.test/d/xyz789\n",
+      "preimageHex": "776562310a68747470733a2f2f6578616d706c65686f73742e746573742f662f6162633132330a68747470733a2f2f6f74686572686f73742e746573742f642f78797a3738390a",
+      "digestHex": "42d4b010f55b590445de828001a0a0c7167bc2fee3d1d1a7ba59ed103efb1f59",
+      "fold10Hex": "3cdc6017efc5a26fb9db",
+      "catalogId": "42D4B010F55B590445DE828001A0A0C7167BC2FEE3D1D1A7BA59ED103EFB1F59",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B015200003CDC6017EFC5A26FB9DB"
+      ]
+    }
+  ],
+  "sameIdentity": [
+    {
+      "label": "hints are outside the identity",
+      "note": "A size learned later does not make another release.",
+      "a": "#title: Some Release 1080p\r\n#file: 0\r\n#name: some.release.mkv\r\n#size: 1073741824\r\n#hoster: examplehost\r\nhttps://examplehost.test/f/abc123\r\n",
+      "b": "https://examplehost.test/f/abc123\n",
+      "digestHex": "bdc46732203d345c94c229699a28f32b6d05a8379c5bf61d7c2dc3c0c1caeee2"
+    },
+    {
+      "label": "order does not matter",
+      "note": "Links are sorted before they are digested.",
+      "a": "https://a.test/1\nhttps://b.test/2\n",
+      "b": "https://b.test/2\nhttps://a.test/1\n",
+      "digestHex": "8a840665f7993e29afde7a5dc139e4617165585ebc37f5ba096fbe0138ac1f2b"
+    },
+    {
+      "label": "a repeated link counts once",
+      "note": "",
+      "a": "https://a.test/1\nhttps://a.test/1\n",
+      "b": "https://a.test/1\n",
+      "digestHex": "456d59d2802fe9c546ba68da7067baf3358f4be9390fcc564f672434a90e72e6"
+    },
+    {
+      "label": "line endings do not matter",
+      "note": "",
+      "a": "https://a.test/1\r\nhttps://b.test/2\r\n",
+      "b": "https://a.test/1\nhttps://b.test/2",
+      "digestHex": "8a840665f7993e29afde7a5dc139e4617165585ebc37f5ba096fbe0138ac1f2b"
+    },
+    {
+      "label": "spellings of one link",
+      "note": "Case of scheme and host, a default port and a fragment.",
+      "a": "HTTPS://A.test:443/1#top\n",
+      "b": "https://a.test/1\n",
+      "digestHex": "456d59d2802fe9c546ba68da7067baf3358f4be9390fcc564f672434a90e72e6"
+    }
+  ],
+  "reject": [
+    {
+      "label": "empty",
+      "container": "",
+      "reason": "no link"
+    },
+    {
+      "label": "only comments",
+      "container": "#title: nothing\r\n",
+      "reason": "no link"
+    },
+    {
+      "label": "an html error page",
+      "container": "\u003chtml\u003e\u003cbody\u003e404\u003c/body\u003e\u003c/html\u003e\n",
+      "reason": "a line that is neither comment nor link"
+    },
+    {
+      "label": "an ftp link",
+      "container": "ftp://host.test/f\n",
+      "reason": "scheme"
+    },
+    {
+      "label": "a magnet among links",
+      "container": "https://host.test/f\nmagnet:?xt=urn:btih:0102030405060708090A0B0C0D0E0F1011121314\n",
+      "reason": "scheme"
+    },
+    {
+      "label": "credentials",
+      "container": "https://user:pass@host.test/f\n",
+      "reason": "a link with credentials"
+    },
+    {
+      "label": "a space inside a link",
+      "container": "https://host.test/a b\n",
+      "reason": "a byte at or below 0x20"
+    }
+  ]
+}

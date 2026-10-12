@@ -31,6 +31,7 @@ func TestFormatAndParse(t *testing.T) {
 		{"a v2 torrent", V2(v2), NetworkBTV2, v2[:]},
 		{"an ed2k file", PrefixED2K + strings.ToUpper("00020406080a0c0e10121416181a1c1e"), NetworkED2K, md4[:]},
 		{"an ed2k file, formatted", ED2K(md4), NetworkED2K, md4[:]},
+		{"a web link set", Web(v2), NetworkWeb, v2[:]},
 	}
 
 	for _, c := range cases {
@@ -261,6 +262,8 @@ func TestParseRejects(t *testing.T) {
 		{"a v2 id of v1 length", "bt:v2:" + strings.Repeat("AB", 20), ErrLength},
 		{"non-hex characters", "bt:v1:" + strings.Repeat("ZZ", 20), ErrFormat},
 		{"an nzb id with no value", "nzb:", ErrFormat},
+		{"a web id of v1 length", "web:" + strings.Repeat("AB", 20), ErrLength},
+		{"a web id with no value", "web:", ErrLength},
 		{"a bare string that is not an MD4", "hello", ErrFormat},
 	}
 

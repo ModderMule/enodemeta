@@ -23,11 +23,12 @@ enum MetaKind {
   META_KIND_BT_V2 = 2;  // BitTorrent v2 only; identity is the 32-byte v2 infohash
   META_KIND_NZB = 3;    // Usenet; identity is the 32-byte canonical NZB digest
   META_KIND_ED2K = 4;   // eD2K/Kad file; identity is the 16-byte MD4 file hash, which is also the row's hash
+  META_KIND_WEB = 5;    // Web links; identity is the 32-byte canonical link-set digest
 }
 
 // MetaNetwork is a catalogue network: where a search goes. A network serves one
 // or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB; Kad and servers:
-// ED2K).
+// ED2K; web: WEB).
 enum MetaNetwork {
   // META_NETWORK_UNSPECIFIED: every network the server offers.
   META_NETWORK_UNSPECIFIED = 0;
@@ -39,6 +40,10 @@ enum MetaNetwork {
   // exchanges searches with (server.proto). No daemon is behind it. Its rows
   // are META_KIND_ED2K and have the shape of a Kad row.
   META_NETWORK_SERVERS = 4;
+  // META_NETWORK_WEB: links found on web pages, to file hosters, stream hosts
+  // and direct media. Its rows are META_KIND_WEB. A row never carries a URL:
+  // the links are the row's metafile, a text/uri-list fetched on request.
+  META_NETWORK_WEB = 5;
 }
 
 // MetaEntry is one advertised row: a release, or one file inside it.

@@ -157,6 +157,36 @@
       "hashHex": "ED2B013702002607EB26A6581BE8BC62"
     },
     {
+      "label": "web, single file",
+      "kind": 5,
+      "kindName": "web",
+      "version": 1,
+      "flags": 2,
+      "fileIndex": 0,
+      "identityHex": "989AF2D490AD69204F635BF342EFAFEC4C81D1B70E636059125DFAC1E7438721",
+      "hashHex": "ED2B015200004A2BD0622D1CDF607997"
+    },
+    {
+      "label": "web, multi-file, file 1",
+      "kind": 5,
+      "kindName": "web",
+      "version": 1,
+      "flags": 3,
+      "fileIndex": 1,
+      "identityHex": "989AF2D490AD69204F635BF342EFAFEC4C81D1B70E636059125DFAC1E7438721",
+      "hashHex": "ED2B015301004A2BD0622D1CDF607997"
+    },
+    {
+      "label": "web, multi-file, the whole-set row",
+      "kind": 5,
+      "kindName": "web",
+      "version": 1,
+      "flags": 1,
+      "fileIndex": 4294967295,
+      "identityHex": "989AF2D490AD69204F635BF342EFAFEC4C81D1B70E636059125DFAC1E7438721",
+      "hashHex": "ED2B0151FFFF4A2BD0622D1CDF607997"
+    },
+    {
       "label": "bt-v1, flags 0x0 (none)",
       "kind": 1,
       "kindName": "bt-v1",
@@ -261,7 +291,12 @@
     {
       "label": "an unknown kind",
       "hashHex": "ED2B01F101001E1B3620ADE2AF9D6E90",
-      "reason": "kind must be 1, 2 or 3 in this version"
+      "reason": "kind must be 1, 2, 3 or 5 in this version"
+    },
+    {
+      "label": "the native kind",
+      "hashHex": "ED2B014101001E1B3620ADE2AF9D6E90",
+      "reason": "kind 4 is an eD2K file, whose hash is its own MD4 and never a meta hash"
     },
     {
       "label": "the reserved flag set",

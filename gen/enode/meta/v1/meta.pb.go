@@ -43,6 +43,7 @@ const (
 	MetaKind_META_KIND_BT_V2       MetaKind = 2 // BitTorrent v2 only; identity is the 32-byte v2 infohash
 	MetaKind_META_KIND_NZB         MetaKind = 3 // Usenet; identity is the 32-byte canonical NZB digest
 	MetaKind_META_KIND_ED2K        MetaKind = 4 // eD2K/Kad file; identity is the 16-byte MD4 file hash, which is also the row's hash
+	MetaKind_META_KIND_WEB         MetaKind = 5 // Web links; identity is the 32-byte canonical link-set digest
 )
 
 // Enum value maps for MetaKind.
@@ -53,6 +54,7 @@ var (
 		2: "META_KIND_BT_V2",
 		3: "META_KIND_NZB",
 		4: "META_KIND_ED2K",
+		5: "META_KIND_WEB",
 	}
 	MetaKind_value = map[string]int32{
 		"META_KIND_UNSPECIFIED": 0,
@@ -60,6 +62,7 @@ var (
 		"META_KIND_BT_V2":       2,
 		"META_KIND_NZB":         3,
 		"META_KIND_ED2K":        4,
+		"META_KIND_WEB":         5,
 	}
 )
 
@@ -92,7 +95,7 @@ func (MetaKind) EnumDescriptor() ([]byte, []int) {
 
 // MetaNetwork is a catalogue network: where a search goes. A network serves one
 // or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB; Kad and servers:
-// ED2K).
+// ED2K; web: WEB).
 type MetaNetwork int32
 
 const (
@@ -106,6 +109,10 @@ const (
 	// exchanges searches with (server.proto). No daemon is behind it. Its rows
 	// are META_KIND_ED2K and have the shape of a Kad row.
 	MetaNetwork_META_NETWORK_SERVERS MetaNetwork = 4
+	// META_NETWORK_WEB: links found on web pages, to file hosters, stream hosts
+	// and direct media. Its rows are META_KIND_WEB. A row never carries a URL:
+	// the links are the row's metafile, a text/uri-list fetched on request.
+	MetaNetwork_META_NETWORK_WEB MetaNetwork = 5
 )
 
 // Enum value maps for MetaNetwork.
@@ -116,6 +123,7 @@ var (
 		2: "META_NETWORK_USENET",
 		3: "META_NETWORK_KAD",
 		4: "META_NETWORK_SERVERS",
+		5: "META_NETWORK_WEB",
 	}
 	MetaNetwork_value = map[string]int32{
 		"META_NETWORK_UNSPECIFIED": 0,
@@ -123,6 +131,7 @@ var (
 		"META_NETWORK_USENET":      2,
 		"META_NETWORK_KAD":         3,
 		"META_NETWORK_SERVERS":     4,
+		"META_NETWORK_WEB":         5,
 	}
 )
 
@@ -1885,19 +1894,21 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\n" +
 	"MediaEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12.\n" +
-	"\x05value\x18\x02 \x01(\v2\x18.enode.meta.v1.MediaInfoR\x05value:\x028\x01*v\n" +
+	"\x05value\x18\x02 \x01(\v2\x18.enode.meta.v1.MediaInfoR\x05value:\x028\x01*\x89\x01\n" +
 	"\bMetaKind\x12\x19\n" +
 	"\x15META_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V1\x10\x01\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V2\x10\x02\x12\x11\n" +
 	"\rMETA_KIND_NZB\x10\x03\x12\x12\n" +
-	"\x0eMETA_KIND_ED2K\x10\x04*\x8e\x01\n" +
+	"\x0eMETA_KIND_ED2K\x10\x04\x12\x11\n" +
+	"\rMETA_KIND_WEB\x10\x05*\xa4\x01\n" +
 	"\vMetaNetwork\x12\x1c\n" +
 	"\x18META_NETWORK_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14META_NETWORK_TORRENT\x10\x01\x12\x17\n" +
 	"\x13META_NETWORK_USENET\x10\x02\x12\x14\n" +
 	"\x10META_NETWORK_KAD\x10\x03\x12\x18\n" +
-	"\x14META_NETWORK_SERVERS\x10\x04*\xd3\x02\n" +
+	"\x14META_NETWORK_SERVERS\x10\x04\x12\x14\n" +
+	"\x10META_NETWORK_WEB\x10\x05*\xd3\x02\n" +
 	"\n" +
 	"SearchSort\x12\x1b\n" +
 	"\x17SEARCH_SORT_UNSPECIFIED\x10\x00\x12\x19\n" +

@@ -6,6 +6,7 @@
 //	bt:v2:<64 hex>     a v2-only torrent
 //	nzb:<64 hex>       a Usenet release, named by its canonical NZB digest
 //	nzb:<uuid>         a client-minted Usenet transfer id
+//	web:<64 hex>       a web link set, named by its canonical link-set digest
 //
 // The two nzb spellings are different objects and both must keep parsing. The
 // digest form is a *catalogue* id: it is recomputable from the .nzb alone, so a
@@ -42,6 +43,7 @@ const (
 	PrefixBTV1 = "bt:v1:"
 	PrefixBTV2 = "bt:v2:"
 	PrefixNZB  = "nzb:"
+	PrefixWeb  = "web:"
 )
 
 // Network is which network an id belongs to.
@@ -54,6 +56,7 @@ const (
 	NetworkBTV1
 	NetworkBTV2
 	NetworkNZB
+	NetworkWeb
 )
 
 // String names the network.
@@ -67,6 +70,8 @@ func (n Network) String() string {
 		return "bt:v2"
 	case NetworkNZB:
 		return "nzb"
+	case NetworkWeb:
+		return "web"
 	default:
 		return "unknown"
 	}
@@ -82,8 +87,9 @@ var (
 type ID struct {
 	Network Network
 
-	// Hash is the raw hash bytes: 16 for ed2k, 20 for bt:v1, 32 for bt:v2 and
-	// 32 for an nzb digest. Empty for an nzb uuid, which is opaque.
+	// Hash is the raw hash bytes: 16 for ed2k, 20 for bt:v1, 32 for bt:v2, 32
+	// for an nzb digest and 32 for a web digest. Empty for an nzb uuid, which is
+	// opaque.
 	Hash []byte
 
 	// Value is the part after the prefix, normalised to uppercase hex when
@@ -102,6 +108,8 @@ func (id ID) String() string {
 		return PrefixBTV2 + upperHex(id.Hash)
 	case NetworkNZB:
 		return PrefixNZB + id.Value
+	case NetworkWeb:
+		return PrefixWeb + upperHex(id.Hash)
 	default:
 		return ""
 	}
@@ -163,6 +171,30 @@ func ParseNZB(s string) ([32]byte, error) {
 	return digest, nil
 }
 
+// Web formats a web link set's catalogue id from its canonical digest — the 32
+// bytes weblinks.Identity returns.
+func Web(digest [32]byte) string {
+	return PrefixWeb + upperHex(digest[:])
+}
+
+// ParseWeb reads a web catalogue id and returns the digest, which is all a
+// daemon needs to find the link set FetchMetaFile was asked for.
+func ParseWeb(s string) ([32]byte, error) {
+	var digest [32]byte
+
+	id, err := Parse(s)
+	if err != nil {
+		return digest, err
+	}
+	if id.Network != NetworkWeb {
+		return digest, fmt.Errorf("%w: %s is not a web id", ErrFormat, id.Network)
+	}
+
+	copy(digest[:], id.Hash)
+
+	return digest, nil
+}
+
 // Torrent formats whichever id a torrent should carry, following rule 2: a
 // torrent with a v1 hash is named by it, hybrid or not.
 func Torrent(v1 *[20]byte, v2 *[32]byte) (string, error) {
@@ -195,6 +227,9 @@ func Parse(s string) (ID, error) {
 
 	case strings.HasPrefix(s, PrefixED2K):
 		return parseHashID(NetworkED2K, s[len(PrefixED2K):], 16)
+
+	case strings.HasPrefix(s, PrefixWeb):
+		return parseHashID(NetworkWeb, s[len(PrefixWeb):], 32)
 
 	case strings.HasPrefix(s, PrefixNZB):
 		value := s[len(PrefixNZB):]

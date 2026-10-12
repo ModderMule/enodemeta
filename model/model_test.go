@@ -142,6 +142,54 @@ func TestValidateNZB(t *testing.T) {
 	t.Logf("output: the same fields are accepted on a bt-v1 row")
 }
 
+// validWebEntry is the web shape: a 32-byte link-set digest, a web: catalogue
+// id, and no magnet.
+func validWebEntry() Entry {
+	entry := validNZBEntry()
+	entry.Kind = metahash.KindWeb
+	entry.CatalogID = "web:202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F"
+
+	return entry
+}
+
+// TestValidateWeb pins that a web row carries no link of any spelling. Its
+// links are its metafile, fetched when a user asks for them.
+func TestValidateWeb(t *testing.T) {
+	entry := validWebEntry()
+	t.Logf("input:  %s %q", entry.Kind, entry.Name)
+
+	if err := entry.Validate(); err != nil {
+		t.Fatalf("a well-formed web entry must validate: %v", err)
+	}
+	t.Logf("output: accepted")
+
+	for _, c := range []struct {
+		label  string
+		mutate func(e *Entry)
+	}{
+		{"a magnet", func(e *Entry) { e.Magnet = "magnet:?xt=urn:btih:0102030405060708090A0B0C0D0E0F1011121314" }},
+		{"a link in the magnet field", func(e *Entry) { e.Magnet = "https://host.test/f/abc123" }},
+		{"the magnet-only flag", func(e *Entry) { e.Flags |= FlagMagnetOnly }},
+		{"a 20-byte identity", func(e *Entry) { e.Identity = e.Identity[:20] }},
+	} {
+		t.Run(c.label, func(t *testing.T) {
+			entry := validWebEntry()
+			c.mutate(&entry)
+			t.Logf("input:  a web entry with %s", c.label)
+
+			err := entry.Validate()
+			if err == nil {
+				t.Fatalf("%s must be rejected on a web row", c.label)
+			}
+			t.Logf("output: %v", err)
+
+			if !errors.Is(err, ErrInvalidEntry) {
+				t.Errorf("got %v, want it to wrap %v", err, ErrInvalidEntry)
+			}
+		})
+	}
+}
+
 // TestMint is the server's half: a daemon sends an entry with no hash, and the
 // server fills it in from the identity the daemon supplied.
 func TestMint(t *testing.T) {

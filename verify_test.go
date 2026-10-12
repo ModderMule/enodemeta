@@ -261,3 +261,52 @@ func TestIdentityOfED2K(t *testing.T) {
 		t.Errorf("ed2k is a known kind, got %v", err)
 	}
 }
+
+// TestVerifyWebLinks is the web half of the same check: the container a daemon
+// serves must fold to the hash its row advertised, and a container with a link
+// swapped must not.
+func TestVerifyWebLinks(t *testing.T) {
+	container := []byte("#title: Some Release\r\n" +
+		"#file: 0\r\n#hoster: examplehost\r\nhttps://examplehost.test/f/abc123\r\n" +
+		"#file: 1\r\n#hoster: examplehost\r\nhttps://examplehost.test/f/def456\r\n")
+	t.Logf("input:  a %d-byte container listing 2 links", len(container))
+
+	identity, err := IdentityOf(metahash.KindWeb, container)
+	if err != nil {
+		t.Fatalf("deriving the web identity: %v", err)
+	}
+	t.Logf("output: identity %x", identity)
+
+	if len(identity) != metahash.KindWeb.IdentityLen() {
+		t.Fatalf("a web identity is %d bytes, got %d", metahash.KindWeb.IdentityLen(), len(identity))
+	}
+
+	hash, err := metahash.Mint(metahash.MintInput{
+		Kind:      metahash.KindWeb,
+		Identity:  identity,
+		FileIndex: 1,
+		FileCount: 2,
+	})
+	if err != nil {
+		t.Fatalf("minting the row: %v", err)
+	}
+	t.Logf("output: meta hash %s", hash)
+
+	if err := VerifyMetaFile(hash, container); err != nil {
+		t.Errorf("the bytes the identity came from must verify: %v", err)
+	}
+
+	// Hints are outside the identity, so a copy with them stripped verifies too.
+	bare := []byte("https://examplehost.test/f/def456\nhttps://examplehost.test/f/abc123\n")
+	if err := VerifyMetaFile(hash, bare); err != nil {
+		t.Errorf("the same links without hints must verify: %v", err)
+	}
+
+	swapped := []byte("https://examplehost.test/f/abc123\nhttps://elsewhere.test/f/def456\n")
+	err = VerifyMetaFile(hash, swapped)
+	t.Logf("output: a container with one link swapped: %v", err)
+
+	if !errors.Is(err, ErrVerification) {
+		t.Errorf("got %v, want %v", err, ErrVerification)
+	}
+}
