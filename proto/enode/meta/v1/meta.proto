@@ -77,6 +77,8 @@ message MetaEntry {
   string name = 5;
 
   // size is the selected file's size; total_size is the whole release's.
+  // Zero is "not known". A web row may carry both as zero: a stream has no
+  // size to state, and a client shows such a row as a stream.
   uint64 size = 6;
   uint64 total_size = 7;
 

@@ -340,6 +340,8 @@ type MetaEntry struct {
 	// name is what a client displays.
 	Name string `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
 	// size is the selected file's size; total_size is the whole release's.
+	// Zero is "not known". A web row may carry both as zero: a stream has no
+	// size to state, and a client shows such a row as a stream.
 	Size      uint64 `protobuf:"varint,6,opt,name=size,proto3" json:"size,omitempty"`
 	TotalSize uint64 `protobuf:"varint,7,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"`
 	// type is the eD2K file-type string: Audio, Video, Image, Doc, Pro, Arc, Iso.

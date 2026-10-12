@@ -28,6 +28,7 @@ type vectorFile struct {
 	Canonical    []canonicalVector `json:"canonical"`
 	Identity     []identityVector  `json:"identity"`
 	SameIdentity []sameVector      `json:"sameIdentity"`
+	Different    []differentVector `json:"differentIdentity"`
 	Reject       []rejectVector    `json:"reject"`
 }
 
@@ -70,6 +71,16 @@ type sameVector struct {
 	DigestHex string `json:"digestHex"`
 }
 
+// differentVector is a pair of containers that must not have one identity.
+type differentVector struct {
+	Label      string `json:"label"`
+	Note       string `json:"note"`
+	A          string `json:"a"`
+	B          string `json:"b"`
+	DigestAHex string `json:"digestAHex"`
+	DigestBHex string `json:"digestBHex"`
+}
+
 type rejectVector struct {
 	Label     string `json:"label"`
 	Container string `json:"container"`
@@ -89,8 +100,8 @@ func TestVectors(t *testing.T) {
 		if err := os.WriteFile(vectorsPath, append(raw, '\n'), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		t.Logf("output: rewrote %s with %d canonical, %d identity, %d same-identity and %d reject vectors",
-			vectorsPath, len(want.Canonical), len(want.Identity), len(want.SameIdentity), len(want.Reject))
+		t.Logf("output: rewrote %s with %d canonical, %d identity, %d same-identity, %d different-identity and %d reject vectors",
+			vectorsPath, len(want.Canonical), len(want.Identity), len(want.SameIdentity), len(want.Different), len(want.Reject))
 
 		return
 	}
@@ -104,8 +115,8 @@ func TestVectors(t *testing.T) {
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatalf("parsing the vectors: %v", err)
 	}
-	t.Logf("input:  %s with %d canonical, %d identity, %d same-identity and %d reject vectors",
-		vectorsPath, len(got.Canonical), len(got.Identity), len(got.SameIdentity), len(got.Reject))
+	t.Logf("input:  %s with %d canonical, %d identity, %d same-identity, %d different-identity and %d reject vectors",
+		vectorsPath, len(got.Canonical), len(got.Identity), len(got.SameIdentity), len(got.Different), len(got.Reject))
 
 	for _, v := range got.Canonical {
 		if c, err := Canonical(v.Link); err != nil || c != v.Canonical {
@@ -127,6 +138,19 @@ func TestVectors(t *testing.T) {
 		}
 		if a != b || hex.EncodeToString(a[:]) != v.DigestHex {
 			t.Errorf("%s: got %x and %x, want both %s", v.Label, a, b, v.DigestHex)
+		}
+	}
+
+	for _, v := range got.Different {
+		a, errA := IdentityOf([]byte(v.A))
+		b, errB := IdentityOf([]byte(v.B))
+		if errA != nil || errB != nil {
+			t.Errorf("%s: %v, %v", v.Label, errA, errB)
+
+			continue
+		}
+		if a == b || hex.EncodeToString(a[:]) != v.DigestAHex || hex.EncodeToString(b[:]) != v.DigestBHex {
+			t.Errorf("%s: got %x and %x, want %s and %s", v.Label, a, b, v.DigestAHex, v.DigestBHex)
 		}
 	}
 
@@ -212,14 +236,18 @@ func buildVectorFile(t *testing.T) vectorFile {
 	file := vectorFile{
 		Scheme: "enode.meta.v1",
 		Note: "Cross-repository test vectors for the canonical web link-set digest (enodemeta weblinks/identity.go " +
-			"holds the rules, and docs/ingest-contract.md amendment 24 the reasons). Every implementation — eNode-go, " +
+			"holds the rules, and docs/ingest-contract.md amendments 24 and 25 the reasons). Every implementation — eNode-go, " +
 			"eMuleQt and the crawler daemons — must reproduce this file exactly. Regenerate with: go test ./weblinks -update",
 		IdentityPrefixText: IdentityPrefix,
 	}
 
 	for _, c := range []struct{ label, link string }{
 		{"scheme and host are lowered, the path is not", "HTTPS://Host.TEST/F/Abc"},
-		{"a fragment is dropped", "https://host.test/f/abc#player"},
+		{"a fragment is kept, case and all", "HTTPS://Host.TEST/file/AbCd1234#KeY-_9xyz"},
+		{"an empty fragment is dropped", "https://host.test/f/abc#"},
+		{"a fragment that is all there is", "https://host.test/#!AbCd1234!KeY-_9xyz"},
+		{"a fragment with no path gets one", "https://Host.test#!AbCd1234!KeY-_9xyz"},
+		{"a second hash belongs to the fragment", "https://host.test/f#a#b"},
 		{"the default https port is dropped", "https://host.test:443/f"},
 		{"the default http port is dropped", "http://host.test:80/f"},
 		{"another port stays", "https://host.test:8443/f"},
@@ -245,6 +273,9 @@ func buildVectorFile(t *testing.T) vectorFile {
 			"#protected: 1\r\n" + twoParts},
 		{"bare links, no hints", "Every link is file 0, so this is one file with two mirrors.",
 			"https://examplehost.test/f/abc123\nhttps://otherhost.test/d/xyz789\n"},
+		{"a link whose key is its fragment", "The fragment is in the pre-image, and a '#' inside a line makes no comment of it.",
+			"#file: 0\r\n#name: some.release.mkv\r\n#hoster: keyhost\r\nhttps://keyhost.test/file/AbCd1234#KeY-_9xyz\r\n" +
+				"#file: 0\r\n#hoster: keyhost-legacy\r\nhttps://keyhost.test/#!AbCd1234!KeY-_9xyz\r\n"},
 	} {
 		file.Identity = append(file.Identity, buildIdentityVector(t, c.label, c.note, c.container))
 	}
@@ -256,8 +287,10 @@ func buildVectorFile(t *testing.T) vectorFile {
 			"https://a.test/1\nhttps://b.test/2\n", "https://b.test/2\nhttps://a.test/1\n"},
 		{"a repeated link counts once", "", "https://a.test/1\nhttps://a.test/1\n", "https://a.test/1\n"},
 		{"line endings do not matter", "", "https://a.test/1\r\nhttps://b.test/2\r\n", "https://a.test/1\nhttps://b.test/2"},
-		{"spellings of one link", "Case of scheme and host, a default port and a fragment.",
-			"HTTPS://A.test:443/1#top\n", "https://a.test/1\n"},
+		{"spellings of one link", "Case of scheme and host, a default port and an empty fragment.",
+			"HTTPS://A.test:443/1#\n", "https://a.test/1\n"},
+		{"spellings of one link with a fragment", "The fragment itself is compared byte for byte.",
+			"HTTPS://A.test:443/file/AbCd#KeY\n", "https://a.test/file/AbCd#KeY\n"},
 	} {
 		digest, err := IdentityOf([]byte(c.a))
 		if err != nil {
@@ -269,6 +302,23 @@ func buildVectorFile(t *testing.T) vectorFile {
 		})
 	}
 
+	for _, c := range []struct{ label, note, a, b string }{
+		{"a fragment tells two links apart", "A link with a key is not the link without it.",
+			"https://a.test/file/AbCd#KeY\n", "https://a.test/file/AbCd\n"},
+		{"the case of a fragment matters", "", "https://a.test/file/AbCd#KeY\n", "https://a.test/file/AbCd#key\n"},
+	} {
+		a, errA := IdentityOf([]byte(c.a))
+		b, errB := IdentityOf([]byte(c.b))
+		if errA != nil || errB != nil {
+			t.Fatalf("%s: %v, %v", c.label, errA, errB)
+		}
+
+		file.Different = append(file.Different, differentVector{
+			Label: c.label, Note: c.note, A: c.a, B: c.b,
+			DigestAHex: hex.EncodeToString(a[:]), DigestBHex: hex.EncodeToString(b[:]),
+		})
+	}
+
 	file.Reject = []rejectVector{
 		{"empty", "", "no link"},
 		{"only comments", "#title: nothing\r\n", "no link"},
@@ -277,6 +327,7 @@ func buildVectorFile(t *testing.T) vectorFile {
 		{"a magnet among links", "https://host.test/f\nmagnet:?xt=urn:btih:0102030405060708090A0B0C0D0E0F1011121314\n", "scheme"},
 		{"credentials", "https://user:pass@host.test/f\n", "a link with credentials"},
 		{"a space inside a link", "https://host.test/a b\n", "a byte at or below 0x20"},
+		{"a space inside a fragment", "https://host.test/f#a b\n", "a byte at or below 0x20"},
 	}
 
 	return file

@@ -24,6 +24,10 @@
 // forgotten after it; title and protected describe the whole set and may stand
 // anywhere. Two links with the same file number are mirrors of one file.
 //
+// A line is a comment by its first byte alone. A link may hold a '#' further
+// on: that is its fragment, which is kept, because some hosters keep a file's
+// decryption key there. A size hint of 0, or none, says the size is not known.
+//
 // Hints are advice. They are not covered by the identity, so a daemon can
 // learn a size or lose a mirror's name without the release becoming another
 // release. The links are what the identity covers: see Identity.
@@ -232,12 +236,14 @@ func Canonical(link string) (string, error) {
 		return "", fmt.Errorf("%w: scheme %q", ErrLink, scheme)
 	}
 
-	if cut := strings.IndexByte(rest, '#'); cut >= 0 {
+	// An empty fragment says nothing, so "…/f#" and "…/f" are one link. Any
+	// other fragment stays: it is where some hosters keep a file's key.
+	if cut := strings.IndexByte(rest, '#'); cut == len(rest)-1 {
 		rest = rest[:cut]
 	}
 
 	authority, tail := rest, ""
-	if cut := strings.IndexAny(rest, "/?"); cut >= 0 {
+	if cut := strings.IndexAny(rest, "/?#"); cut >= 0 {
 		authority, tail = rest[:cut], rest[cut:]
 	}
 

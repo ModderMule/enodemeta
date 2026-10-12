@@ -743,8 +743,9 @@ additions below are about meaning rather than about wire format.
       `"web1\n"` followed by each distinct canonical link and a `\n`, sorted
       by their bytes. The thirteen rules are in `weblinks/identity.go` and
       pinned by `testdata/web-identity-vectors.json`. Only `http` and `https`
-      links are accepted; scheme and host are lowered, a fragment and a default
-      port are dropped, and everything else is kept byte for byte.
+      links are accepted; scheme and host are lowered, a default port is
+      dropped, and everything else is kept byte for byte. That includes the
+      fragment, since amendment 25.
     - **Hints are outside the identity.** A daemon that learns a size or a name
       later republishes the same release. A link added or lost is a different
       set: the daemon retracts the old release and publishes the new one.
@@ -760,9 +761,9 @@ additions below are about meaning rather than about wire format.
       distinct ones, whatever the mirror count; the whole-set row exists when
       that is above 1.
     - **`seeders` is the number of mirrors last found alive, and `peers` is
-      0.** `size` must be known: eNode-go drops a row of size 0, so a daemon
-      does not publish a release until it has resolved one. `type` comes from
-      the file names, `indexer` names the site the page was on.
+      0.** `size` may be 0, which says it is not known: see amendment 25.
+      `type` comes from the file names, `indexer` names the site the page was
+      on.
     - **The kind nibble takes the value 5.** A meta hash of that kind parses on
       a peer with this amendment and is refused as an unknown kind by one
       without it, which drops the row and nothing else.
@@ -770,3 +771,47 @@ additions below are about meaning rather than about wire format.
       maps the unknown kind to unspecified and drops the row, an older client
       never asks for network 5 and must skip an unknown value in
       `Caps.networks`, and no existing message changes shape.
+
+25. **A web link keeps its fragment, and a web row may have no size.** Both
+    correct amendment 24, which dropped the one and forbade the other.
+
+    - **The fragment is part of a link.** Some hosters keep a file's
+      decryption key after the `#`, and a link stored without it opens
+      nothing. `weblinks.Canonical` keeps everything from the first `#` byte
+      for byte, the case included, and removes only an empty fragment: a `#`
+      that is the link's last byte. The authority now ends at the first `/`,
+      `?` or `#`, and a `/` is put before a fragment that follows the
+      authority directly. Rules 4, 5 and 7 of `weblinks/identity.go` say so.
+    - **A producer removes the fragments that do not matter.** This package
+      cannot know which hosters read theirs, so `…/clip.mp4#t=10` and
+      `…/clip.mp4` are two links to it. A daemon that wants them to be one
+      cuts the fragment before it builds the container.
+    - **The container's syntax is unchanged.** A line is a comment by its
+      first byte alone, and a link line starts with its scheme, so a `#`
+      inside a link never makes a comment of it.
+    - **The identity prefix stays `web1`.** A link set without a fragment has
+      the identity it had. Only a set holding one changes, and such a set
+      could not be stored correctly before.
+      `testdata/web-identity-vectors.json` gains a `differentIdentity` list:
+      pairs that must not share a digest.
+    - **`size` 0 and `total_size` 0 say the size is not known.** A stream page
+      or a tube video has no size to state. A web file row may carry `size`
+      0, and a web whole-set row `size` 0 and `total_size` 0;
+      `Entry.Validate` accepts both. The rule that a file is no larger than
+      its release still holds whenever `total_size` is known.
+    - **A server passes such a row on, and a client shows it as a stream**
+      instead of as a file of no bytes. The row is otherwise ordinary: it has
+      a hash, a metafile and a live-mirror count.
+    - **Stock eMule discards a search result of size 0**
+      (`srchybrid/SearchList.cpp`), so only a client that knows this amendment
+      shows the row. Nothing breaks for one that does not.
+    - **A size bound treats it as 0.** `min_size` above 0 excludes it, and the
+      SIZE sort puts it with the smallest. A daemon should publish a row of
+      size 0 only where the size cannot be known, not where it has not looked
+      yet: the client will call it a stream.
+    - **Only the web kind.** A torrent or an NZB always states its sizes, and a
+      native ED2K or Kad row with none is still refused.
+    - **A peer that predates this amendment** drops a web row of size 0 as it
+      did, and computes a different identity for a container whose links hold
+      a fragment, so `VerifyMetaFile` fails there. No such container existed
+      before this amendment.

@@ -1,6 +1,6 @@
 {
   "scheme": "enode.meta.v1",
-  "note": "Cross-repository test vectors for the canonical web link-set digest (enodemeta weblinks/identity.go holds the rules, and docs/ingest-contract.md amendment 24 the reasons). Every implementation — eNode-go, eMuleQt and the crawler daemons — must reproduce this file exactly. Regenerate with: go test ./weblinks -update",
+  "note": "Cross-repository test vectors for the canonical web link-set digest (enodemeta weblinks/identity.go holds the rules, and docs/ingest-contract.md amendments 24 and 25 the reasons). Every implementation — eNode-go, eMuleQt and the crawler daemons — must reproduce this file exactly. Regenerate with: go test ./weblinks -update",
   "identityPrefixText": "web1\n",
   "canonical": [
     {
@@ -9,9 +9,29 @@
       "canonical": "https://host.test/F/Abc"
     },
     {
-      "label": "a fragment is dropped",
-      "link": "https://host.test/f/abc#player",
+      "label": "a fragment is kept, case and all",
+      "link": "HTTPS://Host.TEST/file/AbCd1234#KeY-_9xyz",
+      "canonical": "https://host.test/file/AbCd1234#KeY-_9xyz"
+    },
+    {
+      "label": "an empty fragment is dropped",
+      "link": "https://host.test/f/abc#",
       "canonical": "https://host.test/f/abc"
+    },
+    {
+      "label": "a fragment that is all there is",
+      "link": "https://host.test/#!AbCd1234!KeY-_9xyz",
+      "canonical": "https://host.test/#!AbCd1234!KeY-_9xyz"
+    },
+    {
+      "label": "a fragment with no path gets one",
+      "link": "https://Host.test#!AbCd1234!KeY-_9xyz",
+      "canonical": "https://host.test/#!AbCd1234!KeY-_9xyz"
+    },
+    {
+      "label": "a second hash belongs to the fragment",
+      "link": "https://host.test/f#a#b",
+      "canonical": "https://host.test/f#a#b"
     },
     {
       "label": "the default https port is dropped",
@@ -129,6 +149,23 @@
       "fileMetaHashHex": [
         "ED2B015200003CDC6017EFC5A26FB9DB"
       ]
+    },
+    {
+      "label": "a link whose key is its fragment",
+      "note": "The fragment is in the pre-image, and a '#' inside a line makes no comment of it.",
+      "container": "#file: 0\r\n#name: some.release.mkv\r\n#hoster: keyhost\r\nhttps://keyhost.test/file/AbCd1234#KeY-_9xyz\r\n#file: 0\r\n#hoster: keyhost-legacy\r\nhttps://keyhost.test/#!AbCd1234!KeY-_9xyz\r\n",
+      "links": 2,
+      "files": 1,
+      "protected": false,
+      "preimageText": "web1\nhttps://keyhost.test/#!AbCd1234!KeY-_9xyz\nhttps://keyhost.test/file/AbCd1234#KeY-_9xyz\n",
+      "preimageHex": "776562310a68747470733a2f2f6b6579686f73742e746573742f23214162436431323334214b65592d5f3978797a0a68747470733a2f2f6b6579686f73742e746573742f66696c652f4162436431323334234b65592d5f3978797a0a",
+      "digestHex": "fe448a01c85266992cdbdcf7c06ca535b1389d27cd424ef05e87a47ecf8e7fea",
+      "fold10Hex": "901b049d33e073df7e72",
+      "catalogId": "FE448A01C85266992CDBDCF7C06CA535B1389D27CD424EF05E87A47ECF8E7FEA",
+      "wholeSetMetaHashHex": "",
+      "fileMetaHashHex": [
+        "ED2B01520000901B049D33E073DF7E72"
+      ]
     }
   ],
   "sameIdentity": [
@@ -162,10 +199,35 @@
     },
     {
       "label": "spellings of one link",
-      "note": "Case of scheme and host, a default port and a fragment.",
-      "a": "HTTPS://A.test:443/1#top\n",
+      "note": "Case of scheme and host, a default port and an empty fragment.",
+      "a": "HTTPS://A.test:443/1#\n",
       "b": "https://a.test/1\n",
       "digestHex": "456d59d2802fe9c546ba68da7067baf3358f4be9390fcc564f672434a90e72e6"
+    },
+    {
+      "label": "spellings of one link with a fragment",
+      "note": "The fragment itself is compared byte for byte.",
+      "a": "HTTPS://A.test:443/file/AbCd#KeY\n",
+      "b": "https://a.test/file/AbCd#KeY\n",
+      "digestHex": "772e369775828e4fb29954adaafb4097096adf657364b0dc77721f7c2736223d"
+    }
+  ],
+  "differentIdentity": [
+    {
+      "label": "a fragment tells two links apart",
+      "note": "A link with a key is not the link without it.",
+      "a": "https://a.test/file/AbCd#KeY\n",
+      "b": "https://a.test/file/AbCd\n",
+      "digestAHex": "772e369775828e4fb29954adaafb4097096adf657364b0dc77721f7c2736223d",
+      "digestBHex": "333e50663979ae2fb9a41461b937b175819c7fef9c2d63879149bf966ba27e81"
+    },
+    {
+      "label": "the case of a fragment matters",
+      "note": "",
+      "a": "https://a.test/file/AbCd#KeY\n",
+      "b": "https://a.test/file/AbCd#key\n",
+      "digestAHex": "772e369775828e4fb29954adaafb4097096adf657364b0dc77721f7c2736223d",
+      "digestBHex": "1917ff920b6b79069e22c5893d069f27ecda88df5e3ccaebc69cbb45fa0f4042"
     }
   ],
   "reject": [
@@ -202,6 +264,11 @@
     {
       "label": "a space inside a link",
       "container": "https://host.test/a b\n",
+      "reason": "a byte at or below 0x20"
+    },
+    {
+      "label": "a space inside a fragment",
+      "container": "https://host.test/f#a b\n",
       "reason": "a byte at or below 0x20"
     }
   ]

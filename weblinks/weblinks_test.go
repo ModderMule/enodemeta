@@ -17,7 +17,13 @@ func TestCanonical(t *testing.T) {
 		{"already canonical", "https://host.test/f/abc", "https://host.test/f/abc"},
 		{"scheme and host are lowered", "HTTPS://Host.TEST/F/Abc", "https://host.test/F/Abc"},
 		{"the path keeps its case", "http://host.test/AbC?Id=Q", "http://host.test/AbC?Id=Q"},
-		{"a fragment is dropped", "https://host.test/f/abc#player", "https://host.test/f/abc"},
+		{"a fragment is kept", "https://host.test/f/abc#player", "https://host.test/f/abc#player"},
+		{"a fragment keeps its case", "HTTPS://Host.TEST/file/AbCd#KeY-_9", "https://host.test/file/AbCd#KeY-_9"},
+		{"an empty fragment is dropped", "https://host.test/f/abc#", "https://host.test/f/abc"},
+		{"a fragment that is all there is", "https://host.test/#!AbCd!KeY", "https://host.test/#!AbCd!KeY"},
+		{"a fragment with no path gets one", "https://Host.test#!AbCd!KeY", "https://host.test/#!AbCd!KeY"},
+		{"a second hash belongs to the fragment", "https://host.test/f#a#b", "https://host.test/f#a#b"},
+		{"a slash in a fragment is not a path", "https://Host.test#/2/file/AbC/", "https://host.test/#/2/file/AbC/"},
 		{"the default https port is dropped", "https://host.test:443/f", "https://host.test/f"},
 		{"the default http port is dropped", "http://host.test:80/f", "http://host.test/f"},
 		{"another port stays", "https://host.test:8443/f", "https://host.test:8443/f"},
@@ -118,7 +124,8 @@ func TestParseReadsHints(t *testing.T) {
 	}
 
 	// A hint belongs to the link after it and to no other.
-	if bare := (Link{URL: "https://otherhost.test/d/xyz789"}); doc.Links[1] != bare {
+	// Its fragment is the link's own, and the line is no comment for holding a '#'.
+	if bare := (Link{URL: "https://otherhost.test/d/xyz789#frag"}); doc.Links[1] != bare {
 		t.Errorf("second link: got %+v, want %+v", doc.Links[1], bare)
 	}
 }

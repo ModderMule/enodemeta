@@ -190,6 +190,37 @@ func TestValidateWeb(t *testing.T) {
 	}
 }
 
+// TestValidateWebWithoutSize pins that a size of zero is "not known" on a web
+// row and no fault: a stream has no size to state, and a client shows such a row
+// as a stream.
+func TestValidateWebWithoutSize(t *testing.T) {
+	for _, c := range []struct {
+		label  string
+		mutate func(e *Entry)
+	}{
+		{"a file of unknown size in a release of unknown size", func(e *Entry) { e.Size, e.TotalSize = 0, 0 }},
+		{"a one-file release of unknown size", func(e *Entry) { e.Size, e.TotalSize, e.FileCount = 0, 0, 1 }},
+		{"a whole-set row of unknown size", func(e *Entry) {
+			e.FileIndex, e.Size, e.TotalSize = metahash.FileIndexWholeSet32, 0, 0
+		}},
+		{"a file of unknown size in a release with a size", func(e *Entry) { e.Size = 0 }},
+	} {
+		t.Run(c.label, func(t *testing.T) {
+			entry := validWebEntry()
+			c.mutate(&entry)
+			t.Logf("input:  %s index=%d files=%d size=%d total=%d", entry.Kind, entry.FileIndex, entry.FileCount, entry.Size, entry.TotalSize)
+
+			if err := entry.Validate(); err != nil {
+				t.Fatalf("%s must validate: %v", c.label, err)
+			}
+			if err := entry.Mint(); err != nil {
+				t.Fatalf("%s must mint: %v", c.label, err)
+			}
+			t.Logf("output: accepted, hash %x", entry.MetaHash)
+		})
+	}
+}
+
 // TestMint is the server's half: a daemon sends an entry with no hash, and the
 // server fills it in from the identity the daemon supplied.
 func TestMint(t *testing.T) {

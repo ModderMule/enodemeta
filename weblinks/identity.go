@@ -32,14 +32,19 @@ const IdentityLen = sha256.Size
 //	    corrected, leaves the release the same release.
 //	 3. The scheme is everything before the first "://", lowered. It must be
 //	    http or https.
-//	 4. Everything from the first '#' is removed. A fragment never reaches the
-//	    host, so two links differing only there fetch the same thing.
-//	 5. The authority runs from the "://" to the first '/' or '?'. It is
+//	 4. The fragment, everything from the first '#', is part of the link and
+//	    is kept byte for byte: some hosters keep a file's decryption key
+//	    there, and a link without it opens nothing. Only an empty fragment, a
+//	    '#' that is the link's last byte, is removed. A producer removes a
+//	    fragment that does not matter before it builds the container; this
+//	    package cannot know which those are.
+//	 5. The authority runs from the "://" to the first '/', '?' or '#'. It is
 //	    lowered. One with an '@' is refused: a link with credentials in it is
 //	    not one to publish.
 //	 6. A port of 80 on http, of 443 on https, or an empty one, is removed. The
 //	    colons of an IPv6 literal are not a port.
-//	 7. When nothing follows the authority, or a '?' does, a '/' is put between.
+//	 7. When nothing follows the authority, or a '?' or a '#' does, a '/' is
+//	    put between.
 //	 8. The rest is kept byte for byte. Nothing is percent-decoded, no case
 //	    changes and no query is reordered: hosters compare those bytes, and a
 //	    rule that was almost right would merge links that are different files.

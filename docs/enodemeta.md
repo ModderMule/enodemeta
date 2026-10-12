@@ -151,6 +151,16 @@ with `go test ./nzbmeta -update`.
 `testdata/web-identity-vectors.json` pins link canonicalisation and the
 canonical link-set digest. Regenerate with `go test ./weblinks -update`.
 
+Two things about a web release that the other kinds do not have (amendment 25
+of [ingest-contract.md](ingest-contract.md)):
+
+- **A link keeps its fragment.** Some hosters keep a file's decryption key
+  after the `#`. Only an empty fragment is removed. A daemon cuts the fragments
+  that do not matter before it builds the container.
+- **A size of 0 says "not known".** A stream has no size to state. A web row
+  may carry `size` 0 and `total_size` 0, a server passes it on, and a client
+  shows it as a stream. Stock eMule discards a search result of size 0.
+
 ## Torrent identity
 
 `torrentmeta.ParseInfo` takes the raw info dictionary — the exact bytes the
@@ -231,7 +241,7 @@ Two invariants are tested: `Identity(Parse(Encode(d))) == Identity(d)` and
 |---|---|---|
 | `FT_META_KIND` … | `0x60`–`0x6C` | The meta row's fields |
 | `FT_META_FILEINDEX` | `0x62` | The true index, authoritative above 65,535 files |
-| `FT_META_TOTALSIZE` | `0x64` | The whole release's size; `FT_FILESIZE` stays the file's |
+| `FT_META_TOTALSIZE` | `0x64` | The whole release's size; `FT_FILESIZE` stays the file's. Left out when not known |
 | `FT_META_ID` | `0x65` | The `catalog_id`, echoed back when asking for the metafile |
 | `FT_META_MAGNET` | `0x6C` | A magnet, so a client need make no API call at all |
 | `FT_META_NETWORK` | `0x6D` | Marks a native row (a real eD2K file) with the network that found it; 3 = Kad. Its only meta tag |
