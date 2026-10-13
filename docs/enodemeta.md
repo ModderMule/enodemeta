@@ -325,7 +325,9 @@ search by the work a release is linked to.
 what a newer peer might send (a score past 100, an unknown kind). A daemon advertises it
 in `GetInfoResponse.enhanced_search_available` and otherwise answers `Unimplemented`:
 usenet-crawler serves it behind `ingest.enhanced_search` (default off); torrent-crawler,
-which links no works, always answers `Unimplemented`.
+which links no works, always answers `Unimplemented`. web-crawler may serve it behind the
+same switch (amendment 26), from the ids a post links to and from release names: it has
+no ratings, cast or runtime, and sends no `MediaInfo`.
 
 ## Deferred
 

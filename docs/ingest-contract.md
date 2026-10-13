@@ -443,7 +443,8 @@ additions below are about meaning rather than about wire format.
     ignores a filter or sort its network does not have** — a Usenet daemon drops
     `alive`, `min_leechers`, `min_popularity`, `seen_within_days` and the
     torrent sorts (a Kad daemon answers `alive`, against sources: amendment
-    20); a torrent daemon drops `categories`, `groups`,
+    20); a torrent daemon drops `categories` (a web daemon answers it:
+    amendment 26), `groups`,
     `min_completion`, `min_grabs`, `indexed_within_days` and the Usenet sorts —
     and answers an unknown or foreign sort in relevance order. `sort_ascending`
     only applies to attribute sorts. Across networks, only `DATE` and `SIZE`
@@ -815,3 +816,36 @@ additions below are about meaning rather than about wire format.
       did, and computes a different identity for a container whose links hold
       a fragment, so `VerifyMetaFile` fails there. No such container existed
       before this amendment.
+
+26. **A web daemon answers `categories`, and may answer `SearchEnhanced`.**
+    No proto and no model change: what a field means on one more network.
+
+    - **`SearchRequest.categories` (14) is answered by any daemon that files
+      its releases under categories**, in the numbers of the one tree
+      usenet-crawler publishes (`pkg/category`: 2000 films, 5000 TV, 6000
+      adult, and their leaves). A root still matches every leaf under it.
+      web-crawler does, from schema 9 on. This narrows amendment 14, which had
+      every network but Usenet drop the filter: a daemon without categories
+      (torrent-crawler, a Kad or server daemon) still drops it, so a consumer
+      that sends it across networks gets those networks unfiltered, as before.
+    - **The numbers are one vocabulary, not one per network.** A consumer shows
+      one category menu. A daemon that cannot tell a leaf files a release under
+      its root's "other" leaf (2999, 5999), and under 8000 when it cannot tell
+      the root.
+    - **A category is not on `MetaEntry` and not in the feed.** It is a filter
+      a search is narrowed by, as on Usenet. A row's `type` stays the eD2K
+      file type.
+    - **A web daemon may offer `SearchEnhanced`** under amendment 15's rules:
+      off unless its operator turns it on, announced by
+      `enhanced_search_available`, `Unimplemented` otherwise. Its works come
+      from the ids a post links to (IMDb, TMDb, TVDB) and from release names
+      that share a title, so `WorkInfo` there carries a kind, a title, a year,
+      those ids, and a release's season and episode. It has no ratings, no
+      runtime and no cast, so a bound or a `performers` filter fails every
+      release there, as amendment 15 says of a value a daemon does not know.
+    - **`EnhancedSearchResponse.media` is empty from a web daemon.** `MediaInfo`
+      is what a video header says, and a web daemon downloads no media. What a
+      release's name says of its picture and sound is not put there.
+    - **A peer that predates this amendment** sends `categories` to a web
+      daemon and has it applied where it was ignored. That is the answer it
+      asked for.
