@@ -85,13 +85,14 @@ by three orders of magnitude.
 ## Identity: `catalog_id`
 
 A release is named by `bt:v1:<40 hex>`, `bt:v2:<64 hex>`, `nzb:<64 hex>`,
-`ed2k:<32 hex>` or `web:<64 hex>`, uppercase hex, formatted and parsed only by `btid`. A hybrid
+`ed2k:<32 hex>`, `web:<64 hex>` or `ctr:<64 hex>`, uppercase hex, formatted and parsed only by `btid`. A hybrid
 torrent is keyed by its **v1** hash, because that is the one both versions of the
 network agree on; keying it by v2 would catalogue the same release twice. A
 Usenet release is keyed by the canonical NZB digest of
 [amendment 8](#amendments-to-the-enode-go-plan-document), which is recomputable
 from the `.nzb` alone. A web release is keyed by the canonical link-set digest
-of amendment 24, which is recomputable from its links alone.
+of amendment 24, which is recomputable from its links alone. A link container
+is keyed by the SHA-256 of its bytes (amendment 27).
 
 The id is unique per daemon, not globally. A consumer keys rows by
 `(daemon, catalog_id)`, taking the daemon name from `GetInfo`.
@@ -222,7 +223,8 @@ wrapped as `d4:info…e`, with `catalog.trackers` added as an announce-list if t
 operator configured any. A DHT-only crawl has none, and a metafile with no
 trackers is correct rather than broken — the infohash is enough to find the
 swarm. For an NZB it is the stored document verbatim; see amendment 11. For a
-web release it is the link container of amendment 24, `text/uri-list`.
+web release it is the link container of amendment 24, `text/uri-list`. For a
+`.dlc`, `.ccf` or `.rsdf` it is the file as the page served it (amendment 27).
 
 A release the keyword filter hides answers exactly as one that was never
 catalogued: `not_found`, "no release …". The answer must not tell a caller that
@@ -849,3 +851,63 @@ additions below are about meaning rather than about wire format.
     - **A peer that predates this amendment** sends `categories` to a web
       daemon and has it applied where it was ignored. That is the answer it
       asked for.
+
+27. **A fifth metafile-backed kind, `META_KIND_CONTAINER` (6), and the p2p
+    links a web page offers.** A web page may offer, beside its hoster links,
+    an eD2K link, a magnet, a `.torrent` or an encrypted link container
+    (`.dlc`, `.ccf`, `.rsdf`). A web daemon serves each of them as a row of
+    its own kind, under the five calls it already serves. One proto change:
+    the enum value.
+
+    - **A container row is `META_KIND_CONTAINER`.** Its `identity` is the
+      SHA-256 of the file's bytes (`linkcontainer.Identity`), and its
+      `catalog_id` is `ctr:<64 HEX>` (`btid.Container`). The file is
+      encrypted with keys that belong to the services that made it, so
+      nothing in this contract reads it: the bytes are the metafile, served
+      unchanged, and `VerifyMetaFile` checks them byte for byte.
+    - **A container row is one file.** `file_index` is 0, `file_count` 1 (or
+      unset), there is no whole-set row, `path_authoritative` is false, and
+      it carries no magnet and no torrent or Usenet flag. `Entry.Validate`
+      refuses anything else. `FlagProtected` may be set when the page states
+      a password for the files behind it.
+    - **A container row may have no size.** The file says nothing of the
+      files behind it. `size` is what the page stated, or 0, which reads as
+      amendment 25 has it.
+    - **`FetchMetaFile` answers with the bytes**, of at most 1 MiB
+      (`linkcontainer.MaxSize`), with the content type
+      `application/x-dlc`, `application/x-ccf` or `application/x-rsdf`
+      (`linkcontainer.ContentType`). A client names the file it saves by
+      `linkcontainer.FormatOf`.
+    - **eD2K links go out as amendment 17's rows.** A web daemon sends an
+      eD2K link as a native `META_KIND_ED2K` row: the file's MD4 as
+      `identity`, `catalog_id` `ed2k:<32 HEX>`, one file, no metafile.
+      `seeders` and `peers` are 0, since a page states no sources. A server
+      treats it as it treats a Kad row (amendment 18), so a client sees one
+      eD2K file whichever daemon found it.
+    - **Torrents go out as torrent-crawler's rows.** A `.torrent` a page
+      offered is a `META_KIND_BT_V1` (or `BT_V2`) release: the file rows, the
+      whole-set row and a magnet on each, and `FetchMetaFile` returns the
+      `.torrent`. `seeders` and `peers` are 0: a web daemon does not ask the
+      swarm. A magnet and a `.torrent` with one infohash are one release.
+    - **A magnet with no `.torrent` is a magnet-only row.** One row at
+      `file_index` 0 with `file_count` 1, the magnet, and `FlagMagnetOnly`.
+      `FetchMetaFile` answers `failed_precondition`, as the table above has
+      it, and the client hands the magnet to its torrent engine.
+    - **A magnet-only row may have no size.** A magnet without `xl=` states
+      none, so the row carries `size` 0 and `total_size` 0. This widens the
+      last rule of amendment 25 for this one case: a torrent with a
+      metafile still states its sizes.
+    - **One row per hash.** A daemon that found the same file, torrent or
+      container on several pages publishes it once, and retracts it when no
+      page it still holds offers it.
+    - **`GetInfo.kinds` lists what the daemon serves.** A web daemon that
+      publishes these rows lists `META_KIND_ED2K`, `META_KIND_BT_V1`,
+      `META_KIND_BT_V2` and `META_KIND_CONTAINER` beside `META_KIND_WEB`.
+      A server routes `FetchMetaFile` for a BT or container row to the daemon
+      whose feed holds its `catalog_id`.
+    - **The kind nibble takes the value 6.** The fold, the layout and
+      `testdata/meta-hash-vectors.json` are unchanged.
+    - **A peer that predates this amendment is not harmed by it.** A server
+      maps kind 6 to unspecified and drops the row; a client that meets one
+      refuses the hash as an unknown kind and drops the row. An older server
+      drops a magnet-only row of size 0, as it drops a web row of size 0.

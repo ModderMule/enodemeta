@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ModderMule/enodemeta/bencode"
+	"github.com/ModderMule/enodemeta/linkcontainer"
 	"github.com/ModderMule/enodemeta/metahash"
 	"github.com/ModderMule/enodemeta/torrentmeta"
 )
@@ -308,5 +309,37 @@ func TestVerifyWebLinks(t *testing.T) {
 
 	if !errors.Is(err, ErrVerification) {
 		t.Errorf("got %v, want %v", err, ErrVerification)
+	}
+}
+
+// TestVerifyContainer: a link container is checked byte for byte. The served
+// file must be the one the row named, and a changed byte fails.
+func TestVerifyContainer(t *testing.T) {
+	content := []byte("PGRsYz4gc3RhbmQtaW4gZW5jcnlwdGVkIGNvbnRhaW5lciA8L2RsYz4=")
+	digest := linkcontainer.Identity(content)
+	t.Logf("input:  a %d-byte container, sha256 %x", len(content), digest)
+
+	hash, err := metahash.Mint(metahash.MintInput{Kind: metahash.KindContainer, Identity: digest[:], FileCount: 1})
+	if err != nil {
+		t.Fatalf("minting the row: %v", err)
+	}
+	t.Logf("output: meta hash %s", hash)
+
+	if err := VerifyMetaFile(hash, content); err != nil {
+		t.Errorf("the container's own bytes must verify: %v", err)
+	}
+
+	changed := append([]byte(nil), content...)
+	changed[0] ^= 1
+	err = VerifyMetaFile(hash, changed)
+	t.Logf("output: one byte changed: %v", err)
+	if !errors.Is(err, ErrVerification) {
+		t.Errorf("got %v, want %v", err, ErrVerification)
+	}
+
+	_, err = IdentityOf(metahash.KindContainer, nil)
+	t.Logf("output: no bytes: %v", err)
+	if !errors.Is(err, linkcontainer.ErrEmpty) {
+		t.Errorf("got %v, want %v", err, linkcontainer.ErrEmpty)
 	}
 }

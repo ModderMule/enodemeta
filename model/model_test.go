@@ -221,6 +221,88 @@ func TestValidateWebWithoutSize(t *testing.T) {
 	}
 }
 
+// validContainerEntry is the link container shape: the SHA-256 of a .dlc, a
+// ctr: catalogue id, one file and no size.
+func validContainerEntry() Entry {
+	identity := make([]byte, 32)
+	for i := range identity {
+		identity[i] = byte(0x60 + i)
+	}
+
+	return Entry{
+		Kind:      metahash.KindContainer,
+		Identity:  identity,
+		Name:      "Some.Release.2026.1080p.dlc",
+		CatalogID: "ctr:606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F",
+		FileCount: 1,
+	}
+}
+
+// TestValidateContainer pins amendment 27's container row: one file, no size
+// needed, and nothing a torrent or a link would carry.
+func TestValidateContainer(t *testing.T) {
+	entry := validContainerEntry()
+	t.Logf("input:  %s %q size=%d", entry.Kind, entry.Name, entry.Size)
+
+	if err := entry.Validate(); err != nil {
+		t.Fatalf("a well-formed container entry must validate: %v", err)
+	}
+	if err := entry.Mint(); err != nil {
+		t.Fatalf("a container entry must mint: %v", err)
+	}
+	t.Logf("output: accepted, hash %x", entry.MetaHash)
+
+	sized := validContainerEntry()
+	sized.Size, sized.TotalSize = 4<<30, 4<<30
+	if err := sized.Validate(); err != nil {
+		t.Errorf("a container with the size its page stated must validate: %v", err)
+	}
+
+	for _, c := range []struct {
+		label  string
+		mutate func(e *Entry)
+	}{
+		{"a magnet", func(e *Entry) { e.Magnet = "magnet:?xt=urn:btih:0102030405060708090A0B0C0D0E0F1011121314" }},
+		{"the magnet-only flag", func(e *Entry) { e.Flags |= FlagMagnetOnly }},
+		{"the private-tracker flag", func(e *Entry) { e.Flags |= FlagPrivateTracker }},
+		{"a second file", func(e *Entry) { e.FileIndex, e.FileCount = 1, 2 }},
+		{"a whole-set row", func(e *Entry) { e.FileIndex, e.FileCount = metahash.FileIndexWholeSet32, 2 }},
+		{"an authoritative path", func(e *Entry) { e.PathAuthoritative = true }},
+		{"a 20-byte identity", func(e *Entry) { e.Identity = e.Identity[:20] }},
+	} {
+		t.Run(c.label, func(t *testing.T) {
+			entry := validContainerEntry()
+			c.mutate(&entry)
+
+			err := entry.Validate()
+			t.Logf("input:  a container entry with %s", c.label)
+			t.Logf("output: %v", err)
+
+			if !errors.Is(err, ErrInvalidEntry) {
+				t.Errorf("got %v, want it to wrap %v", err, ErrInvalidEntry)
+			}
+		})
+	}
+}
+
+// TestValidateMagnetOnlyWithoutSize: a magnet a page offered may name no size
+// (no xl=). Amendment 27 lets that row go out with size 0.
+func TestValidateMagnetOnlyWithoutSize(t *testing.T) {
+	entry := validEntry()
+	entry.Size, entry.TotalSize = 0, 0
+	entry.Magnet = "magnet:?xt=urn:btih:0102030405060708090A0B0C0D0E0F1011121314"
+	entry.Flags |= FlagMagnetOnly
+	t.Logf("input:  %s size=%d flags=%#x", entry.Kind, entry.Size, entry.Flags)
+
+	if err := entry.Validate(); err != nil {
+		t.Fatalf("a magnet-only row of unknown size must validate: %v", err)
+	}
+	if err := entry.Mint(); err != nil {
+		t.Fatalf("a magnet-only row must mint: %v", err)
+	}
+	t.Logf("output: accepted, hash %x", entry.MetaHash)
+}
+
 // TestMint is the server's half: a daemon sends an entry with no hash, and the
 // server fills it in from the identity the daemon supplied.
 func TestMint(t *testing.T) {

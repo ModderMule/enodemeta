@@ -29,10 +29,10 @@ descriptor is registered twice.
 |---|---|
 | `proto/`, `gen/` | The `.proto` files and the generated protobuf + connect code (checked in) |
 | `metahash/` | The eD2K pseudo-hash: minting, parsing, cross-checking |
-| `btid/`, `magnet/`, `ed2klink/` | The `ed2k:`/`bt:v1:`/`bt:v2:`/`nzb:`/`web:` id namespace; magnet and eD2K links |
+| `btid/`, `magnet/`, `ed2klink/` | The `ed2k:`/`bt:v1:`/`bt:v2:`/`nzb:`/`web:`/`ctr:` id namespace; magnet and eD2K links |
 | `model/`, `pbconv/` | Domain types without protobuf, and the conversions at the edge |
 | `tags/`, `filetype/` | `FT_META_*` tag ids and flags; extension → eD2K file type |
-| `bencode/`, `torrentmeta/`, `nzbmeta/`, `weblinks/` | Metafile parsing and identity |
+| `bencode/`, `torrentmeta/`, `nzbmeta/`, `weblinks/`, `linkcontainer/` | Metafile parsing and identity |
 | `verify.go` | `VerifyMetaFile`: recompute a metafile's identity and check it against a hash |
 | `testdata/` | Cross-language vectors |
 

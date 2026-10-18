@@ -185,11 +185,12 @@ func FormatCount(n uint64) string {
 // kindNames are the kind spellings a form uses. They are short because they
 // are what a visitor sees in the address bar.
 var kindNames = map[metahash.Kind]string{
-	metahash.KindBTV1: "v1",
-	metahash.KindBTV2: "v2",
-	metahash.KindNZB:  "nzb",
-	metahash.KindED2K: "ed2k",
-	metahash.KindWeb:  "web",
+	metahash.KindBTV1:      "v1",
+	metahash.KindBTV2:      "v2",
+	metahash.KindNZB:       "nzb",
+	metahash.KindED2K:      "ed2k",
+	metahash.KindWeb:       "web",
+	metahash.KindContainer: "ctr",
 }
 
 func kindName(k metahash.Kind) string {

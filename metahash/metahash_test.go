@@ -106,6 +106,7 @@ func TestBuildParseRoundTrip(t *testing.T) {
 		{"an NZB, path authoritative", KindNZB, FlagMultiFile | FlagPathAuthoritative, 1, v2[:]},
 		{"a protected release", KindNZB, FlagProtected, 0, v2[:]},
 		{"a web link set", KindWeb, FlagMultiFile | FlagPathAuthoritative, 2, v2[:]},
+		{"a link container", KindContainer, 0, 0, v2[:]},
 		{"every defined flag at once", KindBTV1, FlagMultiFile | FlagPathAuthoritative | FlagProtected, 9, v1[:]},
 		{"a wide index keeps its low 16 bits", KindBTV1, FlagMultiFile | FlagPathAuthoritative, 70000, v1[:]},
 	}
@@ -535,7 +536,7 @@ func TestNativeKind(t *testing.T) {
 		t.Errorf("an ed2k identity is an MD4: got %d bytes, want 16", kind.IdentityLen())
 	}
 
-	for _, other := range []Kind{KindBTV1, KindBTV2, KindNZB, KindWeb} {
+	for _, other := range []Kind{KindBTV1, KindBTV2, KindNZB, KindWeb, KindContainer} {
 		if other.Native() || !other.Mintable() {
 			t.Errorf("%s must stay mintable", other)
 		}

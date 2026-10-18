@@ -83,6 +83,11 @@ const (
 	// direct media found on one page. Its identity is the 32-byte canonical
 	// link-set digest, which weblinks.Identity computes.
 	KindWeb Kind = 5
+
+	// KindContainer is a link container: a .dlc, .ccf or .rsdf file a page
+	// offered. Its identity is the SHA-256 of the file's bytes, and the file is
+	// its metafile (amendment 27).
+	KindContainer Kind = 6
 )
 
 // String names the kind.
@@ -98,6 +103,8 @@ func (k Kind) String() string {
 		return "ed2k"
 	case KindWeb:
 		return "web"
+	case KindContainer:
+		return "container"
 	default:
 		return fmt.Sprintf("kind(%d)", uint8(k))
 	}
@@ -105,7 +112,7 @@ func (k Kind) String() string {
 
 // Valid reports whether the kind is one this version defines.
 func (k Kind) Valid() bool {
-	return k == KindBTV1 || k == KindBTV2 || k == KindNZB || k == KindED2K || k == KindWeb
+	return k == KindBTV1 || k == KindBTV2 || k == KindNZB || k == KindED2K || k == KindWeb || k == KindContainer
 }
 
 // Native reports whether a row of this kind is a real eD2K file, whose hash
@@ -131,7 +138,7 @@ func (k Kind) IdentityLen() int {
 	switch k {
 	case KindBTV1:
 		return 20
-	case KindBTV2, KindNZB, KindWeb:
+	case KindBTV2, KindNZB, KindWeb, KindContainer:
 		return 32
 	case KindED2K:
 		return 16

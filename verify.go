@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ModderMule/enodemeta/linkcontainer"
 	"github.com/ModderMule/enodemeta/metahash"
 	"github.com/ModderMule/enodemeta/nzbmeta"
 	"github.com/ModderMule/enodemeta/torrentmeta"
@@ -40,7 +41,8 @@ var (
 //
 //	bytes  := GetMetaFile(metaHash)
 //	ident  := kind == nzb ? canonicalNzbDigest(bytes)
-//	        : kind == web ? canonicalLinkSetDigest(bytes) : infoHashOf(bytes)
+//	        : kind == web ? canonicalLinkSetDigest(bytes)
+//	        : kind == container ? sha256(bytes) : infoHashOf(bytes)
 //	if fold10(ident) != metaHash[6..15] { reject }
 //
 // Be clear about what this buys. The same server supplies both the row and the
@@ -86,6 +88,9 @@ func VerifyMetaFile(hash metahash.Hash, metafile []byte) error {
 //
 // For a web link set it is the canonical digest over the links themselves, so
 // the hints a container carries beside them can change without changing it.
+//
+// For a link container (.dlc, .ccf, .rsdf) it is the SHA-256 of the bytes as
+// served: the file is encrypted and nothing here reads it.
 func IdentityOf(kind metahash.Kind, metafile []byte) ([]byte, error) {
 	switch kind {
 	case metahash.KindBTV1, metahash.KindBTV2:
@@ -111,6 +116,14 @@ func IdentityOf(kind metahash.Kind, metafile []byte) ([]byte, error) {
 
 	case metahash.KindWeb:
 		identity, err := weblinks.IdentityOf(metafile)
+		if err != nil {
+			return nil, fmt.Errorf("enodemeta: %w", err)
+		}
+
+		return identity[:], nil
+
+	case metahash.KindContainer:
+		identity, err := linkcontainer.IdentityOf(metafile)
 		if err != nil {
 			return nil, fmt.Errorf("enodemeta: %w", err)
 		}

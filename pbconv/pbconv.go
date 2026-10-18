@@ -29,6 +29,8 @@ func KindToProto(k metahash.Kind) metav1.MetaKind {
 		return metav1.MetaKind_META_KIND_ED2K
 	case metahash.KindWeb:
 		return metav1.MetaKind_META_KIND_WEB
+	case metahash.KindContainer:
+		return metav1.MetaKind_META_KIND_CONTAINER
 	default:
 		return metav1.MetaKind_META_KIND_UNSPECIFIED
 	}
@@ -47,6 +49,8 @@ func KindFromProto(k metav1.MetaKind) metahash.Kind {
 		return metahash.KindED2K
 	case metav1.MetaKind_META_KIND_WEB:
 		return metahash.KindWeb
+	case metav1.MetaKind_META_KIND_CONTAINER:
+		return metahash.KindContainer
 	default:
 		return metahash.KindUnspecified
 	}

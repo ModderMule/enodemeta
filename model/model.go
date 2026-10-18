@@ -51,8 +51,8 @@ type Entry struct {
 	Magnet    string
 	Flags     uint32
 
-	// Identity is the pre-fold digest: the infohash, or an NZB's canonical
-	// digest.
+	// Identity is the pre-fold digest: the infohash, an NZB's canonical
+	// digest, a web link set's digest or a container's SHA-256.
 	Identity []byte
 
 	// FileCount is how many selectable files the release holds, from the
@@ -153,6 +153,13 @@ func (e Entry) Validate() error {
 	}
 	if e.Kind == metahash.KindWeb && e.Flags&FlagMagnetOnly != 0 {
 		return fmt.Errorf("%w: a web row cannot be magnet-only", ErrInvalidEntry)
+	}
+
+	// A container row is one file, and its file is the metafile.
+	if e.Kind == metahash.KindContainer {
+		if err := e.validateContainer(); err != nil {
+			return err
+		}
 	}
 
 	// A native row has no hash to mint, and its own rules instead.
@@ -488,6 +495,28 @@ func (e Entry) validateNative() error {
 	}
 	if e.Flags&(FlagMagnetOnly|FlagPrivateTracker|FlagV2Available|FlagNeedsPAR2) != 0 {
 		return fmt.Errorf("%w: an %s row cannot carry torrent or usenet flags (%#x)", ErrInvalidEntry, e.Kind, e.Flags)
+	}
+
+	return nil
+}
+
+// validateContainer checks the rules a link container row adds (amendment 27):
+// it is a single file, its bytes are its metafile, and it carries no link.
+//
+// Its size may be 0. The container's own bytes say nothing of the files behind
+// it, so a daemon states the size its page did, or none.
+func (e Entry) validateContainer() error {
+	if e.FileIndex != 0 || e.FileCount > 1 {
+		return fmt.Errorf("%w: a %s row is a single file, got index %d of %d", ErrInvalidEntry, e.Kind, e.FileIndex, e.FileCount)
+	}
+	if e.PathAuthoritative {
+		return fmt.Errorf("%w: a %s row has no file path to be authoritative", ErrInvalidEntry, e.Kind)
+	}
+	if e.Magnet != "" {
+		return fmt.Errorf("%w: a %s row cannot carry a magnet", ErrInvalidEntry, e.Kind)
+	}
+	if e.Flags&(FlagMagnetOnly|FlagPrivateTracker|FlagV2Available|FlagNeedsPAR2) != 0 {
+		return fmt.Errorf("%w: a %s row cannot carry torrent or usenet flags (%#x)", ErrInvalidEntry, e.Kind, e.Flags)
 	}
 
 	return nil

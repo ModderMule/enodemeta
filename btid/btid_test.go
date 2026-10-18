@@ -32,6 +32,7 @@ func TestFormatAndParse(t *testing.T) {
 		{"an ed2k file", PrefixED2K + strings.ToUpper("00020406080a0c0e10121416181a1c1e"), NetworkED2K, md4[:]},
 		{"an ed2k file, formatted", ED2K(md4), NetworkED2K, md4[:]},
 		{"a web link set", Web(v2), NetworkWeb, v2[:]},
+		{"a link container", Container(v2), NetworkContainer, v2[:]},
 	}
 
 	for _, c := range cases {
@@ -281,5 +282,31 @@ func TestParseRejects(t *testing.T) {
 				t.Errorf("got %v, want it to wrap %v", err, c.want)
 			}
 		})
+	}
+}
+
+// TestParseContainer: a container's id gives back the digest a daemon stores
+// its bytes under, and an id of another network is refused.
+func TestParseContainer(t *testing.T) {
+	var digest [32]byte
+	for i := range digest {
+		digest[i] = byte(0x40 + i)
+	}
+
+	id := Container(digest)
+	t.Logf("input:  %s", id)
+
+	got, err := ParseContainer(strings.ToLower(id))
+	t.Logf("output: %x %v", got, err)
+	if err != nil || got != digest {
+		t.Errorf("got %x %v, want %x", got, err, digest)
+	}
+
+	for _, other := range []string{Web(digest), PrefixContainer + "0102", "ctr:"} {
+		_, err := ParseContainer(other)
+		t.Logf("input:  %s -> %v", other, err)
+		if err == nil {
+			t.Errorf("%s must not parse as a container id", other)
+		}
 	}
 }

@@ -24,11 +24,13 @@ enum MetaKind {
   META_KIND_NZB = 3;    // Usenet; identity is the 32-byte canonical NZB digest
   META_KIND_ED2K = 4;   // eD2K/Kad file; identity is the 16-byte MD4 file hash, which is also the row's hash
   META_KIND_WEB = 5;    // Web links; identity is the 32-byte canonical link-set digest
+  META_KIND_CONTAINER = 6;  // Link container (.dlc, .ccf, .rsdf); identity is the SHA-256 of its bytes
 }
 
 // MetaNetwork is a catalogue network: where a search goes. A network serves one
 // or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB; Kad and servers:
-// ED2K; web: WEB).
+// ED2K; web: WEB and CONTAINER). A web daemon may also send ED2K and BT rows for
+// the eD2K links, magnets and torrents its pages offer (amendment 27).
 enum MetaNetwork {
   // META_NETWORK_UNSPECIFIED: every network the server offers.
   META_NETWORK_UNSPECIFIED = 0;

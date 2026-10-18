@@ -44,6 +44,7 @@ const (
 	MetaKind_META_KIND_NZB         MetaKind = 3 // Usenet; identity is the 32-byte canonical NZB digest
 	MetaKind_META_KIND_ED2K        MetaKind = 4 // eD2K/Kad file; identity is the 16-byte MD4 file hash, which is also the row's hash
 	MetaKind_META_KIND_WEB         MetaKind = 5 // Web links; identity is the 32-byte canonical link-set digest
+	MetaKind_META_KIND_CONTAINER   MetaKind = 6 // Link container (.dlc, .ccf, .rsdf); identity is the SHA-256 of its bytes
 )
 
 // Enum value maps for MetaKind.
@@ -55,6 +56,7 @@ var (
 		3: "META_KIND_NZB",
 		4: "META_KIND_ED2K",
 		5: "META_KIND_WEB",
+		6: "META_KIND_CONTAINER",
 	}
 	MetaKind_value = map[string]int32{
 		"META_KIND_UNSPECIFIED": 0,
@@ -63,6 +65,7 @@ var (
 		"META_KIND_NZB":         3,
 		"META_KIND_ED2K":        4,
 		"META_KIND_WEB":         5,
+		"META_KIND_CONTAINER":   6,
 	}
 )
 
@@ -95,7 +98,8 @@ func (MetaKind) EnumDescriptor() ([]byte, []int) {
 
 // MetaNetwork is a catalogue network: where a search goes. A network serves one
 // or more MetaKinds (torrent: BT_V1 and BT_V2; Usenet: NZB; Kad and servers:
-// ED2K; web: WEB).
+// ED2K; web: WEB and CONTAINER). A web daemon may also send ED2K and BT rows for
+// the eD2K links, magnets and torrents its pages offer (amendment 27).
 type MetaNetwork int32
 
 const (
@@ -1896,14 +1900,15 @@ const file_enode_meta_v1_meta_proto_rawDesc = "" +
 	"\n" +
 	"MediaEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12.\n" +
-	"\x05value\x18\x02 \x01(\v2\x18.enode.meta.v1.MediaInfoR\x05value:\x028\x01*\x89\x01\n" +
+	"\x05value\x18\x02 \x01(\v2\x18.enode.meta.v1.MediaInfoR\x05value:\x028\x01*\xa2\x01\n" +
 	"\bMetaKind\x12\x19\n" +
 	"\x15META_KIND_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V1\x10\x01\x12\x13\n" +
 	"\x0fMETA_KIND_BT_V2\x10\x02\x12\x11\n" +
 	"\rMETA_KIND_NZB\x10\x03\x12\x12\n" +
 	"\x0eMETA_KIND_ED2K\x10\x04\x12\x11\n" +
-	"\rMETA_KIND_WEB\x10\x05*\xa4\x01\n" +
+	"\rMETA_KIND_WEB\x10\x05\x12\x17\n" +
+	"\x13META_KIND_CONTAINER\x10\x06*\xa4\x01\n" +
 	"\vMetaNetwork\x12\x1c\n" +
 	"\x18META_NETWORK_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14META_NETWORK_TORRENT\x10\x01\x12\x17\n" +

@@ -23,7 +23,7 @@ Its only dependencies are `google.golang.org/protobuf` and
 |---|---|
 | `proto/`, `gen/` | The `.proto` files and the generated protobuf + connect code |
 | `metahash/` | The eD2K pseudo-hash: minting, parsing, cross-checking, verification |
-| `btid/` | The `ed2k:`/`bt:v1:`/`bt:v2:`/`nzb:`/`web:` id namespace, which is also the `catalog_id` format |
+| `btid/` | The `ed2k:`/`bt:v1:`/`bt:v2:`/`nzb:`/`web:`/`ctr:` id namespace, which is also the `catalog_id` format |
 | `model/` | Domain types with no protobuf imports |
 | `pbconv/` | Conversions between `model` and the generated types |
 | `tags/` | The `FT_META_*` tag ids, capability bits, flags, `MaxSources` |
@@ -31,6 +31,7 @@ Its only dependencies are `google.golang.org/protobuf` and
 | `torrentmeta/` | Torrent identity: v1, v2 and hybrid parsing, file trees, padding |
 | `nzbmeta/` | NZB identity: parsing, the canonical digest, a deterministic writer, subjects, PAR2, shortfall |
 | `weblinks/` | Web link identity: the `text/uri-list` container, link canonicalisation and the canonical digest |
+| `linkcontainer/` | Link container identity: the SHA-256 of a `.dlc`, `.ccf` or `.rsdf`, its format and content type |
 | `magnet/` | Magnet construction, including BEP 53 `so=` |
 | `ed2klink/` | eD2K file links, with the optional AICH hash: what a Kad row offers instead of a magnet |
 | `filetype/` | Extension to eD2K file-type string; `Dominant` types a whole-set row by the type holding most of the release's bytes |
@@ -160,6 +161,13 @@ of [ingest-contract.md](ingest-contract.md)):
 - **A size of 0 says "not known".** A stream has no size to state. A web row
   may carry `size` 0 and `total_size` 0, a server passes it on, and a client
   shows it as a stream. Stock eMule discards a search result of size 0.
+
+A link container (`.dlc`, `.ccf`, `.rsdf`) is its own kind, 6, since
+amendment 27. It is encrypted, so nothing here reads it: its identity is the
+SHA-256 of the bytes, its metafile is the file itself, and a row of it is one
+file that may have no size. The same amendment lets a magnet-only torrent row
+have size 0, and lets a web daemon send the eD2K links, magnets and torrents
+its pages offer as ordinary ED2K and BT rows.
 
 ## Torrent identity
 
