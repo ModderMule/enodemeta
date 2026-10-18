@@ -78,7 +78,7 @@ const (
 
 	// FTMetaNetwork marks a native row — a real eD2K file with its own MD4 in
 	// the hash slot — with the network its catalogue found it on. It is a uint8
-	// holding a MetaNetwork value, and MetaNetworkKad is the only one in use.
+	// holding a MetaNetwork value: MetaNetworkKad or MetaNetworkWeb.
 	//
 	// It is the row's only meta tag. A native row must not carry FTMetaKind:
 	// a client that knows the meta rows drops a row whose kind tag its hash
@@ -91,6 +91,10 @@ const (
 // network. It is META_NETWORK_KAD of the proto, restated so that a client with
 // no generated code has the number.
 const MetaNetworkKad = 3
+
+// MetaNetworkWeb is FTMetaNetwork's value for an eD2K file a web page offered
+// (amendment 28). It is META_NETWORK_WEB of the proto.
+const MetaNetworkWeb = 5
 
 // MetaTagRangeStart and MetaTagRangeEnd bound the range reserved for this
 // feature. A test asserts that nothing this project emits falls outside it.

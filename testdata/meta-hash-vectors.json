@@ -187,6 +187,26 @@
       "hashHex": "ED2B0151FFFF4A2BD0622D1CDF607997"
     },
     {
+      "label": "container, single file",
+      "kind": 6,
+      "kindName": "container",
+      "version": 1,
+      "flags": 0,
+      "fileIndex": 0,
+      "identityHex": "A60251C015F4758DA86565BC579B61C40C77EEDB4C97B02BA9C3582162E92C3D",
+      "hashHex": "ED2B01600000A314B670DDF321DB2457"
+    },
+    {
+      "label": "container, protected",
+      "kind": 6,
+      "kindName": "container",
+      "version": 1,
+      "flags": 4,
+      "fileIndex": 0,
+      "identityHex": "A60251C015F4758DA86565BC579B61C40C77EEDB4C97B02BA9C3582162E92C3D",
+      "hashHex": "ED2B01640000A314B670DDF321DB2457"
+    },
+    {
       "label": "bt-v1, flags 0x0 (none)",
       "kind": 1,
       "kindName": "bt-v1",
@@ -291,7 +311,7 @@
     {
       "label": "an unknown kind",
       "hashHex": "ED2B01F101001E1B3620ADE2AF9D6E90",
-      "reason": "kind must be 1, 2, 3 or 5 in this version"
+      "reason": "kind must be 1, 2, 3, 5 or 6 in this version"
     },
     {
       "label": "the native kind",

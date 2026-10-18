@@ -577,7 +577,8 @@ additions below are about meaning rather than about wire format.
 
 18. **A native row is marked on the wire by one tag, `FT_META_NETWORK`
     (0x6D).** It is a uint8 holding a `MetaNetwork` value, and
-    `META_NETWORK_KAD` (3, `tags.MetaNetworkKad`) is the only one in use. This
+    `META_NETWORK_KAD` (3, `tags.MetaNetworkKad`) and, since amendment 28,
+    `META_NETWORK_WEB` (5, `tags.MetaNetworkWeb`) are the ones in use. This
     is a tag number, not a proto change.
 
     - **It is the row's only meta tag.** The server sends an ED2K row as an
@@ -699,8 +700,8 @@ additions below are about meaning rather than about wire format.
       ignored: a server does not know a file's age, and its rows leave
       `age_days` at 0.
     - **Not on the eD2K wire.** Another server's file in an eD2K search answer
-      is an ordinary file with no meta tag. `FT_META_NETWORK` still has one
-      value in use, 3.
+      is an ordinary file with no meta tag. `FT_META_NETWORK` has no value
+      for the servers network.
     - **An older client** that does not know the value never asks for it. It
       gets these rows under `META_NETWORK_UNSPECIFIED` as ED2K entries, which
       it handles since amendment 19, and must skip an unknown value in
@@ -883,7 +884,7 @@ additions below are about meaning rather than about wire format.
       `identity`, `catalog_id` `ed2k:<32 HEX>`, one file, no metafile.
       `seeders` and `peers` are 0, since a page states no sources. A server
       treats it as it treats a Kad row (amendment 18), so a client sees one
-      eD2K file whichever daemon found it.
+      eD2K file whichever daemon found it; amendment 28 marks it as the web's.
     - **Torrents go out as torrent-crawler's rows.** A `.torrent` a page
       offered is a `META_KIND_BT_V1` (or `BT_V2`) release: the file rows, the
       whole-set row and a magnet on each, and `FetchMetaFile` returns the
@@ -911,3 +912,28 @@ additions below are about meaning rather than about wire format.
       maps kind 6 to unspecified and drops the row; a client that meets one
       refuses the hash as an unknown kind and drops the row. An older server
       drops a magnet-only row of size 0, as it drops a web row of size 0.
+
+28. **`FT_META_NETWORK` takes a second value, `META_NETWORK_WEB` (5).** An
+    eD2K file a web page offered (amendment 27) is marked on the eD2K wire
+    with the network that found it, as a Kad file is. A tag value, not a
+    proto change.
+
+    - **The value is the row's source network.** A native row a server took
+      from the web daemon carries `FT_META_NETWORK` 5 (`tags.MetaNetworkWeb`),
+      one from the Kad daemon 3. Nothing else about the row changes: the real
+      MD4, no source address, no `FT_META_KIND`, and `seeders` and `peers`
+      as the daemon sent them.
+    - **The name prefix is the web network's.** A server that prefixes names
+      gives such a row the web prefix (`[web] `), not the Kad one, so a client
+      that does not read the tag sees where it came from too.
+    - **A client that reads the tag** shows the row as a web find and drops a
+      leading `[web …]` bracket, and only then, as amendment 18 has it for
+      `[kad …]`. In every other way the row is a Kad row: an ordinary eD2K
+      file whose sources come from the eD2K network.
+    - **Kad wins a tie.** When the Kad and web daemons send one file in one
+      answer, the server sends it once, as Kad's row, with value 3.
+    - **The server's own file wins**, as in amendment 18: the row goes out
+      with its real sources and without the tag or the prefix.
+    - **A peer that predates this amendment is not harmed by it.** A client
+      that knows only value 3 keeps a value-5 row as the ordinary file it is,
+      with its `[web] ` prefix in the name.

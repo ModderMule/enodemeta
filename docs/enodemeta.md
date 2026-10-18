@@ -252,7 +252,7 @@ Two invariants are tested: `Identity(Parse(Encode(d))) == Identity(d)` and
 | `FT_META_TOTALSIZE` | `0x64` | The whole release's size; `FT_FILESIZE` stays the file's. Left out when not known |
 | `FT_META_ID` | `0x65` | The `catalog_id`, echoed back when asking for the metafile |
 | `FT_META_MAGNET` | `0x6C` | A magnet, so a client need make no API call at all |
-| `FT_META_NETWORK` | `0x6D` | Marks a native row (a real eD2K file) with the network that found it; 3 = Kad. Its only meta tag |
+| `FT_META_NETWORK` | `0x6D` | Marks a native row (a real eD2K file) with the network that found it; 3 = Kad, 5 = web (amendment 28). Its only meta tag |
 | `ST_META_API*` | `0x9C`, `0x9E`, `0x9F` | Where the server's metadata API is |
 | `ST_SERVER_SEARCH*` | `0xA0`, `0xA1` | Where a server's `ServerSearch` service is, and its certificate pin. Sent in the UDP description reply, server to server; see [server-search-contract.md](server-search-contract.md) |
 
