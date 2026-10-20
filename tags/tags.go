@@ -169,7 +169,8 @@ const (
 	SrvCapMetaSearch = 0x10000
 
 	// FlagMetaSearch is the server's bit in its own flags word, saying it
-	// serves a catalogue. eNode-go's own flags stop at 0x8000.
+	// serves a catalogue. Clear of 0x4000 (IPv6), ed2k-server's 0x8000 and
+	// FlagNatRendezvous (0x40000).
 	FlagMetaSearch = 0x10000
 
 	// FlagServerSearch is reserved for "this server answers ServerSearch" in the
@@ -178,8 +179,10 @@ const (
 	// an empty list, so the peer and what lies behind it drop out of the server
 	// mesh (measured with eNode-go's interop suite, 2026-10-07). The
 	// STServerSearch tag alone is the advertisement. The number stays allocated so
-	// that nothing else takes it.
-	FlagServerSearch = 0x20000
+	// that nothing else takes it. Was 0x20000 until 2026-10-20; moved because
+	// ed2k-server sets 0x20000 for its LowID hole punch, and above eNode-go's
+	// FlagNatRendezvous (0x40000).
+	FlagServerSearch = 0x80000
 
 	// SrvCapUDPMetaSearch is the opt-in inside OP_GLOBSEARCHREQ3's client tag
 	// block. The older global-search opcodes have no tag block and therefore

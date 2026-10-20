@@ -203,7 +203,7 @@ A server learns where another one serves `ServerSearch` in one of two ways:
 The tag is the whole advertisement. A reader that does not know a tag skips
 it; that is what both eMule client trees and the original eserver do.
 
-**No flag bit is sent.** `FlagServerSearch` (`0x20000`, `tags/tags.go`) is
+**No flag bit is sent.** `FlagServerSearch` (`0x80000`, was `0x20000`; `tags/tags.go`) is
 reserved for the server flags word and must not be set. Lugdunum eserver 17.14
 keeps a peer that sets it but then answers every peer-list request with an empty
 list, which removes that peer from the server mesh.

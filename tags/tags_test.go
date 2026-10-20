@@ -82,10 +82,13 @@ func TestServerTagsAvoidTakenNumbers(t *testing.T) {
 // their neighbours hold.
 func TestCapabilityBitsDoNotClash(t *testing.T) {
 	const (
-		srvCapNatLugdunum = 0x1000 // Lugdunum eserver / NeoLoader NAT traversal
-		srvCapIPv6Neo     = 0x2000 // NeoLoader's SRVCAP_IPV6
-		srvCapHighestMFC  = 0x0800 // SRVCAP_REQUIRECRYPT, the last bit MFC eMule defines
-		enodeHighestFlag  = 0x8000 // eNode-go's FlagNatRendezvous
+		srvCapNatLugdunum = 0x1000  // Lugdunum eserver / NeoLoader NAT traversal
+		srvCapIPv6Neo     = 0x2000  // NeoLoader's SRVCAP_IPV6
+		srvCapHighestMFC  = 0x0800  // SRVCAP_REQUIRECRYPT, the last bit MFC eMule defines
+		enodeIPv6Flag     = 0x4000  // eNode-go's FlagIPv6
+		ed2kServerV6Upd   = 0x8000  // ed2k-server: accepts OP_IPV6_UPDATE
+		ed2kServerPunch   = 0x20000 // ed2k-server: LowID hole punch
+		enodeNatFlag      = 0x40000 // eNode-go's FlagNatRendezvous
 	)
 
 	t.Logf("input:  SrvCapMetaSearch=0x%05X FlagMetaSearch=0x%05X SrvCapUDPMetaSearch=0x%02X",
@@ -101,9 +104,15 @@ func TestCapabilityBitsDoNotClash(t *testing.T) {
 		t.Errorf("SrvCapMetaSearch 0x%X must be above the MFC login bits (up to 0x%X)",
 			SrvCapMetaSearch, srvCapHighestMFC)
 	}
-	if FlagMetaSearch <= enodeHighestFlag {
-		t.Errorf("FlagMetaSearch 0x%X must be above eNode-go's highest existing flag 0x%X",
-			FlagMetaSearch, enodeHighestFlag)
+	if FlagMetaSearch <= ed2kServerV6Upd || FlagMetaSearch <= enodeIPv6Flag {
+		t.Errorf("FlagMetaSearch 0x%X must be above the IPv6 bits 0x%X/0x%X",
+			FlagMetaSearch, enodeIPv6Flag, ed2kServerV6Upd)
+	}
+	for _, f := range []int{FlagMetaSearch, FlagServerSearch} {
+		if f == enodeNatFlag || f == ed2kServerPunch {
+			t.Errorf("flag 0x%X collides with FlagNatRendezvous 0x%X or ed2k-server's 0x%X",
+				f, enodeNatFlag, ed2kServerPunch)
+		}
 	}
 
 	// The server-search bit is a server flag like FlagMetaSearch, and must be a
