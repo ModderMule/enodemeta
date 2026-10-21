@@ -61,6 +61,8 @@ func TestServerTagsAvoidTakenNumbers(t *testing.T) {
 
 		"STServerSearch":            STServerSearch,
 		"STServerSearchFingerprint": STServerSearchFingerprint,
+
+		"STEd3k": STEd3k,
 	}
 
 	seen := map[int]string{}
