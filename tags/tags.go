@@ -202,7 +202,8 @@ const (
 	// STServerSearch tag alone is the advertisement. The number stays allocated so
 	// that nothing else takes it. Was 0x20000 until 2026-10-20; moved because
 	// ed2k-server sets 0x20000 for its LowID hole punch, and above eNode-go's
-	// FlagNatRendezvous (0x40000).
+	// FlagNatRendezvous (0x40000). 0x100000 is ed2k-server 0.9.85's two-sided
+	// hole-punch bit (andrey23127/ed2k-server#39), so new bits go above it.
 	FlagServerSearch = 0x80000
 
 	// SrvCapUDPMetaSearch is the opt-in inside OP_GLOBSEARCHREQ3's client tag
