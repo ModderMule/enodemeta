@@ -204,9 +204,11 @@ The tag is the whole advertisement. A reader that does not know a tag skips
 it; that is what both eMule client trees and the original eserver do.
 
 **No flag bit is sent.** `FlagServerSearch` (`0x80000`, was `0x20000`; `tags/tags.go`) is
-reserved for the server flags word and must not be set. Lugdunum eserver 17.14
-keeps a peer that sets it but then answers every peer-list request with an empty
-list, which removes that peer from the server mesh.
+reserved for the server flags word and is not set, because the tag already is the
+advertisement. An earlier version of this contract said Lugdunum eserver 17.14
+empties its peer lists for a peer that sets the bit. That was wrong: eserver
+ignores unknown bits in a peer's UDP flags (disassembly of 17.14 and 17.15, and
+measured with both on 2026-10-26; eNode-go `docs/server-gossip.md` §8).
 
 **A caller dials the address it already trusts.** The URL in the tag is the
 peer's own claim. A caller takes the port, the host header and the TLS name from

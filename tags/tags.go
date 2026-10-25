@@ -195,11 +195,11 @@ const (
 	FlagMetaSearch = 0x10000
 
 	// FlagServerSearch is reserved for "this server answers ServerSearch" in the
-	// server's own flags word, and must NOT be sent. Lugdunum eserver 17.14 keeps
-	// a peer that sets it, but from then on answers every peer-list request with
-	// an empty list, so the peer and what lies behind it drop out of the server
-	// mesh (measured with eNode-go's interop suite, 2026-10-07). The
-	// STServerSearch tag alone is the advertisement. The number stays allocated so
+	// server's own flags word, and is not sent: the STServerSearch tag alone is
+	// the advertisement. (An earlier note said Lugdunum eserver 17.14 empties its
+	// peer lists for a peer that sets it. That was wrong: eserver ignores unknown
+	// UDP flag bits, measured 2026-10-26, eNode-go docs/server-gossip.md §8.)
+	// The number stays allocated so
 	// that nothing else takes it. Was 0x20000 until 2026-10-20; moved because
 	// ed2k-server sets 0x20000 for its LowID hole punch, and above eNode-go's
 	// FlagNatRendezvous (0x40000). 0x100000 is ed2k-server 0.9.85's two-sided
