@@ -937,3 +937,27 @@ additions below are about meaning rather than about wire format.
     - **A peer that predates this amendment is not harmed by it.** A client
       that knows only value 3 keeps a value-5 row as the ordinary file it is,
       with its `[web] ` prefix in the name.
+
+29. **A UDP search can decline catalogue rows.** `OP_GLOBSEARCHREQ3`'s
+    `CT_SERVER_UDPSEARCH_FLAGS` tag takes a third bit, `0x04`
+    (`tags.SrvCapUDPNoMeta`). A tag value, not a proto change.
+
+    - **What it asks.** The server makes no catalogue lookup for this search
+      and answers with its own eD2K files only: no torrent, Usenet or web
+      row, no Kad row, and no row from another server.
+    - **It wins.** It overrides `SrvCapUDPMetaSearch` (`0x02`) and a server
+      setting that sends meta rows to every client. A client sends one of the
+      two bits, never both; a server that sees both treats the search as
+      declining.
+    - **Why.** A global search asks every server in the client's list. When
+      the servers run catalogues of the same networks, each one sends the same
+      rows again; the client merges them by hash and throws the copies away,
+      and each server has spent a daemon call on them. A client that already
+      holds catalogue rows from enough servers sets the bit for the rest.
+    - **When a client sets it is its own choice.** eMuleQt sets it once a
+      configured number of servers (default 1) have sent catalogue rows for
+      the search; a server reads only the bit.
+    - **A peer that predates this amendment is not harmed by it.** eNode-go
+      before it reads `0x02` only, Lugdunum eserver and eMule read `0x01`
+      only, and ed2k-server skips the tag block; each ignores the bit and
+      answers as before.

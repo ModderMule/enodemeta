@@ -211,6 +211,15 @@ const (
 	// never receive meta rows, which is what keeps the amplification surface
 	// restricted to clients that asked.
 	SrvCapUDPMetaSearch = 0x02
+
+	// SrvCapUDPNoMeta, in the same tag, declines every catalogue row: the
+	// server makes no catalogue lookup and answers with its eD2K files only —
+	// no torrent, Usenet or web row, no Kad row and no row from another server.
+	// It wins over SrvCapUDPMetaSearch and over a server that sends meta rows
+	// to every client. A client sets it in a global search once enough servers
+	// have sent it catalogue rows, so the rest do not send the same rows again
+	// (ingest-contract.md amendment 29). A server that predates it ignores it.
+	SrvCapUDPNoMeta = 0x04
 )
 
 // MaxSources caps the source count a meta row may advertise (§4.2).

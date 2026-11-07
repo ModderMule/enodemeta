@@ -130,6 +130,14 @@ func TestCapabilityBitsDoNotClash(t *testing.T) {
 	if SrvCapUDPMetaSearch == 0x01 {
 		t.Error("SrvCapUDPMetaSearch collides with SRVCAP_UDP_NEWTAGS_LARGEFILES")
 	}
+	// The UDP opt-out is a bit of its own, clear of the large-files bit and of
+	// the opt-in, so a client can send exactly one of the two.
+	t.Logf("input:  SrvCapUDPNoMeta=0x%02X", SrvCapUDPNoMeta)
+	if SrvCapUDPNoMeta == 0x01 || SrvCapUDPNoMeta == SrvCapUDPMetaSearch ||
+		SrvCapUDPNoMeta&(SrvCapUDPNoMeta-1) != 0 {
+		t.Errorf("SrvCapUDPNoMeta 0x%X must be a single bit clear of 0x01 and SrvCapUDPMetaSearch 0x%X",
+			SrvCapUDPNoMeta, SrvCapUDPMetaSearch)
+	}
 	t.Logf("output: every capability bit is clear of its neighbours")
 }
 
