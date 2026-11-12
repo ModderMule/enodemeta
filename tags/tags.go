@@ -160,14 +160,14 @@ const (
 	STServerSearchFingerprint = 0xA1
 )
 
-// The ed3k tags, fixed by the ed3k specification (docs/ed2k-tags.md §2 of the
+// The ed3k tags, fixed by the ed3k specification (docs/ed2k-signals.md section 3 of the
 // eMuleQt ed3k-spec): ed3k is the QUIC successor network, and a server that runs
 // an ed3k index node beside its eD2K service says where it is. One number serves
 // two tag spaces that never meet: a server tag in what a server sends, a client
 // tag in what a client sends.
 //
 // 0xE3 is free as a tag id in every surveyed client and server tree (the spec's
-// docs/ed2k-tags.md §3). It is also eD2K's protocol byte and an opcode of
+// docs/ed2k-signals.md section 4). It is also eD2K's protocol byte and an opcode of
 // eNode-go's NAT rendezvous, which are other namespaces. A reader that does not
 // know the tag skips it, as both client trees do.
 const (
